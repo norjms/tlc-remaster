@@ -478,8 +478,16 @@ std::string convertClassTypeToString(int num)
 }
 
 Ship::Ship():
-maxEngineClass(0),maxArmorClass(0),maxShieldClass(0),maxLaserClass(0),maxMissileLauncherClass(0)
+maxEngineClass(0),maxArmorClass(0),maxShieldClass(0),maxLaserClass(0),maxMissileLauncherClass(0),
+partInRepair(PART_NONE)
 {
+	//safe defaults until initializeRepair() rolls the real repair minerals
+	//(captain creation and savegame load); without these the engineer screen
+	//read garbage on any other path
+	for (int i = 0; i < NUM_REPAIR_PARTS; i++) {
+		repairMinerals[i] = ITEM_COBALT;
+		repairCounters[i] = MAX_REPAIR_COUNT;
+	}
 	 Reset();
 }
 
@@ -1445,6 +1453,9 @@ void PlayerInfo::Reset()
    m_is_lost = false;
    alive = true;
 
+   //set by the hyperspace module; until then an encounter indexed the
+   //alien attitude table with an uninitialized value
+   galacticRegion = ALIEN_NONE;
 }
 
 std::string PlayerInfo::getAlienRaceName(int race)

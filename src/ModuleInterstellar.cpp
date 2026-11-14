@@ -381,6 +381,11 @@ bool ModuleInterstellar::Init()
 	flag_DoNormalSpace = false;
 	flag_FoundFlux = false;
 	flag_Engaged = false;
+	//never set anywhere else: left uninitialized, flag_Weapons made the tactical
+	//officer randomly announce "Verifying weapon optics..." in hyperspace
+	flag_Shields = false;
+	flag_Weapons = false;
+	flag_launchEncounter = false;
 
 
 	//enable the Pause Menu

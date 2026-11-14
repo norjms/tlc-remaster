@@ -352,7 +352,7 @@ void ModuleEngineer::Draw()
 	Officer *currentEngineer = g_game->gameState->getCurrentEng();
 	std::string eng = currentEngineer->getLastName() + "-> ";
 	Ship ship = g_game->gameState->getShip();
-	float repair_time, repair_rate = 0;
+	float repair_time = 0, repair_rate = 0;
 	float repair_skill = g_game->gameState->CalcEffectiveSkill(SKILL_ENGINEERING);
 
 	clear_to_color(text,makecol(255,0,255));
