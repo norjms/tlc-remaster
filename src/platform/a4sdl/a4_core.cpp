@@ -370,6 +370,7 @@ int set_gfx_mode(int card, int w, int h, int, int)
 		g_window = SDL_CreateWindow(g_title.c_str(), w, h, flags);
 		if (!g_window) { fprintf(stderr, "a4sdl: SDL_CreateWindow: %s\n", SDL_GetError()); return -1; }
 		g_renderer = SDL_CreateRenderer(g_window, NULL);
+		if (!g_renderer) g_renderer = SDL_CreateRenderer(g_window, SDL_SOFTWARE_RENDERER);
 		if (!g_renderer) { fprintf(stderr, "a4sdl: SDL_CreateRenderer: %s\n", SDL_GetError()); return -1; }
 		SDL_SetRenderVSync(g_renderer, 1);
 	} else {
