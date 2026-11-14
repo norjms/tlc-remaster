@@ -219,6 +219,7 @@ void vsync(void);
 
 /* a4sdl extensions (not in Allegro) */
 void a4_init_paths(void);                /* chdir to the folder holding data/ */
+void a4_use_user_dir_if_needed(void);    /* writable per-user game folder when needed */
 void a4_set_logical_size(int w, int h);  /* size of 'screen'; the window scales it */
 void a4_flip(void);                      /* present 'screen' now */
 int  a4_close_requested(void);           /* window close button was pressed */

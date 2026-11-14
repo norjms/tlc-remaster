@@ -273,7 +273,7 @@ void a4_init_paths(void)
 {
 	namespace fs = std::filesystem;
 	std::error_code ec;
-	if (fs::is_directory("data", ec)) return;
+	if (fs::is_directory("data", ec)) { a4_use_user_dir_if_needed(); return; }
 	std::vector<fs::path> candidates;
 	if (const char *base = SDL_GetBasePath()) {
 		fs::path b = fs::u8path(base);
@@ -286,9 +286,91 @@ void a4_init_paths(void)
 	for (const auto &c : candidates) {
 		if (fs::is_directory(c / "data", ec)) {
 			fs::current_path(c, ec);
-			if (!ec) { fprintf(stderr, "a4sdl: using data from %s\n", c.u8string().c_str()); return; }
+			if (!ec) { fprintf(stderr, "a4sdl: using data from %s\n", c.u8string().c_str()); break; }
 		}
 	}
+	a4_use_user_dir_if_needed();
+}
+
+/* The game writes output.txt, data/config.lua (settings), the planet
+   texture cache in data/planetorbit and saves/ next to its data. That is
+   impossible inside a signed macOS .app (Gatekeeper may even run it from a
+   read-only location) or a read-only install. In those cases build a
+   per-user game folder (SDL_GetPrefPath: ~/Library/Application Support on
+   macOS, ~/.local/share on Linux) where the read-only data is symlinked
+   back to the install and the writable parts are real files, and run from
+   there. A4_USER_DIR=1 forces this (for testing). */
+void a4_use_user_dir_if_needed(void)
+{
+#ifndef _WIN32
+	static bool done = false;   /* main() and allegro_init() both get here */
+	if (done) return;
+	done = true;
+	namespace fs = std::filesystem;
+	std::error_code ec;
+	fs::path base = fs::current_path(ec);
+	if (ec || !fs::is_directory(base / "data", ec)) return;
+
+	bool in_bundle = base.u8string().find(".app/Contents/Resources") != std::string::npos;
+	bool writable = false;
+	{
+		fs::path probe = base / ".a4_write_test";
+		FILE *f = fopen(probe.u8string().c_str(), "wb");
+		if (f) { fclose(f); fs::remove(probe, ec); writable = true; }
+	}
+	const char *force = getenv("A4_USER_DIR");
+	if (!in_bundle && writable && !(force && *force == '1')) return;
+
+	char *pref = SDL_GetPrefPath("Starflight", "The Lost Colony");
+	if (!pref) { fprintf(stderr, "a4sdl: no user folder (%s); running in place\n", SDL_GetError()); return; }
+	fs::path user = fs::u8path(pref);
+	SDL_free(pref);
+	if (fs::equivalent(user, base, ec)) return;   /* already running from it */
+
+	/* point dst at src unless it already is (re-pointed if the app moved) */
+	auto link = [&](const fs::path &src, const fs::path &dst) {
+		std::error_code e;
+		if (fs::is_symlink(dst, e)) {
+			if (fs::read_symlink(dst, e) == src) return;
+			fs::remove(dst, e);
+		} else if (fs::exists(dst, e)) {
+			return;   /* a real file the game wrote: keep it */
+		}
+		fs::create_symlink(src, dst, e);
+		if (e) fprintf(stderr, "a4sdl: link %s: %s\n", dst.u8string().c_str(), e.message().c_str());
+	};
+	auto copy_missing = [&](const fs::path &src, const fs::path &dst) {
+		std::error_code e;
+		if (!fs::exists(dst, e)) fs::copy_file(src, dst, e);
+	};
+
+	fs::path udata = user / "data";
+	fs::create_directories(udata, ec);
+	for (fs::directory_iterator it(base / "data", ec), end; !ec && it != end; it.increment(ec)) {
+		const fs::path &src = it->path();
+		std::string name = src.filename().u8string();
+		if (name == "config.lua") {
+			copy_missing(src, udata / name);                 /* settings screen rewrites it */
+		} else if (name == "planetorbit" && fs::is_directory(src)) {
+			fs::path cache = udata / name;                   /* texture cache is written here */
+			if (fs::is_symlink(cache)) fs::remove(cache);
+			fs::create_directories(cache);
+			std::error_code e2;
+			for (fs::directory_iterator f(src, e2), fend; !e2 && f != fend; f.increment(e2))
+				link(f->path(), cache / f->path().filename());
+		} else {
+			link(src, udata / name);
+		}
+	}
+	fs::path saves = user / "saves";
+	fs::create_directories(saves, ec);
+	std::error_code e3;
+	for (fs::directory_iterator f(base / "saves", e3), fend; !e3 && f != fend; f.increment(e3))
+		copy_missing(f->path(), saves / f->path().filename());
+
+	fs::current_path(user, ec);
+	if (!ec) fprintf(stderr, "a4sdl: game folder %s (data from %s)\n", user.u8string().c_str(), base.u8string().c_str());
+#endif
 }
 
 int allegro_init(void)
