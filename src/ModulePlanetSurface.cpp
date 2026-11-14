@@ -2182,7 +2182,7 @@ void ModulePlanetSurface::Draw()
 	//draw message window
 	static int gmx = (int)g_game->getGlobalNumber("GUI_MESSAGE_POS_X");
 	static int gmy = (int)g_game->getGlobalNumber("GUI_MESSAGE_POS_Y");
-	blit(img_messages, g_game->GetBackBuffer(), 0, 0, gmx, gmy, img_messages->w, img_messages->h);
+	masked_blit(img_messages, g_game->GetBackBuffer(), 0, 0, gmx, gmy, img_messages->w, img_messages->h);
 	messages->Draw(g_game->GetBackBuffer());
 
 	//draw socket gui (mainly used for the loading bar)
