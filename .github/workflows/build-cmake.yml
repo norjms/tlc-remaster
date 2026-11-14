@@ -16,6 +16,8 @@ jobs:
           - { os: macos-latest,   name: macos-universal }
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.name }}
+    env:
+      HAVE_DEVID: ${{ secrets.MACOS_DEVID_P12 != '' }}
     steps:
       - uses: actions/checkout@v7
 
@@ -45,6 +47,41 @@ jobs:
       - name: Install
         run: cmake --install build --config Release --prefix dist/StarflightTLC
 
+      # Developer ID signing + notarization. Runs once the MACOS_DEVID_P12
+      # secret exists (it is not available to pull requests from forks).
+      - name: Sign and notarize (macOS)
+        if: runner.os == 'macOS' && env.HAVE_DEVID == 'true'
+        env:
+          DEVID_P12: ${{ secrets.MACOS_DEVID_P12 }}
+          DEVID_P12_PASSWORD: ${{ secrets.MACOS_DEVID_P12_PASSWORD }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          KC="$RUNNER_TEMP/signing.keychain-db"
+          KCP=$(openssl rand -hex 24)
+          security create-keychain -p "$KCP" "$KC"
+          security set-keychain-settings -lut 3600 "$KC"
+          security unlock-keychain -p "$KCP" "$KC"
+          echo "$DEVID_P12" | base64 --decode > "$RUNNER_TEMP/devid.p12"
+          security import "$RUNNER_TEMP/devid.p12" -k "$KC" -P "$DEVID_P12_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KCP" "$KC" > /dev/null
+          security list-keychains -d user -s "$KC" $(security list-keychains -d user | tr -d '"')
+          ID=$(security find-identity -v -p codesigning "$KC" | awk -F'"' '/Developer ID Application/ {print $2; exit}')
+          echo "Signing as: $ID"
+          APP=dist/StarflightTLC/starflighttlc.app
+          codesign --force --options runtime --timestamp --sign "$ID" "$APP"
+          codesign --verify --strict --verbose=2 "$APP"
+          echo "$ASC_KEY_P8_BASE64" | base64 --decode > "$RUNNER_TEMP/asc.p8"
+          ditto -c -k --keepParent "$APP" "$RUNNER_TEMP/notarize.zip"
+          xcrun notarytool submit "$RUNNER_TEMP/notarize.zip" --key "$RUNNER_TEMP/asc.p8" \
+            --key-id "$ASC_KEY_ID" --issuer "$ASC_ISSUER_ID" --wait --timeout 30m
+          xcrun stapler staple "$APP"
+          spctl --assess --type execute --verbose=4 "$APP"
+          rm -f "$RUNNER_TEMP/devid.p12" "$RUNNER_TEMP/asc.p8"
+          security delete-keychain "$KC"
+
       # Start the game headless, click New Game, dismiss the first dialog,
       # quit, and check the modules came up. Screenshots are uploaded.
       - name: Smoke test
@@ -67,7 +104,8 @@ jobs:
           for i in $(seq 1 120); do kill -0 $pid 2>/dev/null || break; sleep 1; done
           kill $pid 2>/dev/null || true
           wait $pid || echo "game exit code $?"
-          log=$(find dist -name output.txt | head -1)
+          # signed/read-only installs write to the per-user game folder
+          log=$(find dist "$HOME/Library/Application Support/Starflight" "$HOME/.local/share/Starflight" -name output.txt 2>/dev/null | head -1)
           cp "$log" smoke-output.txt
           rm -f "$log"
           tail -n 25 smoke-output.txt
