@@ -18,7 +18,7 @@
 #include <vector>
 
 #define STB_TRUETYPE_IMPLEMENTATION
-#include "thirdparty/stb/stb_truetype.h"
+#include "stb/stb_truetype.h"
 
 namespace {
 

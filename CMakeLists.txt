@@ -73,9 +73,11 @@ add_library(a4sdl STATIC
   src/platform/a4sdl/a4_draw.cpp
   src/platform/a4sdl/a4_load.cpp
   src/platform/a4sdl/a4_alfont.cpp)
+# (never put src/ itself on an include path: the game's src/Math.h would
+#  shadow <math.h> on case-insensitive file systems, i.e. Windows and macOS)
 target_include_directories(a4sdl
   PUBLIC  ${CMAKE_SOURCE_DIR}/src/platform/a4sdl/include
-  PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/platform/a4sdl)
+  PRIVATE ${TP} ${CMAKE_SOURCE_DIR}/src/platform/a4sdl)
 target_link_libraries(a4sdl PUBLIC SDL3::SDL3)
 target_compile_definitions(a4sdl PRIVATE A4_DEV_DATA_DIR="${CMAKE_SOURCE_DIR}/bin")
 
@@ -104,7 +106,6 @@ list(TRANSFORM GAME_SRC PREPEND ${CMAKE_SOURCE_DIR}/src/)
 add_executable(starflighttlc WIN32 MACOSX_BUNDLE
   ${GAME_SRC}
   ${TP}/miniaudio/miniaudio_impl.c)
-target_include_directories(starflighttlc PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_compile_definitions(starflighttlc PRIVATE TIXML_USE_STL)
 target_link_libraries(starflighttlc PRIVATE a4sdl lua51 noise)
 if(UNIX AND NOT APPLE)

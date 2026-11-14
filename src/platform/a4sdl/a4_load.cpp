@@ -22,7 +22,7 @@
 #define STBI_ONLY_TGA
 #define STBI_ONLY_PNG
 #define STBI_FAILURE_USERMSG
-#include "thirdparty/stb/stb_image.h"
+#include "stb/stb_image.h"
 
 namespace fs = std::filesystem;
 
