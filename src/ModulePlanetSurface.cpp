@@ -1270,9 +1270,13 @@ bool ModulePlanetSurface::fabTilemap()
 	//fill tilemap based on planet surface image
 
     this->pbody = new PlanetaryBody();
+    //the planet type selects the Perlin recipe; without it, a planet whose
+    //texture isn't cached yet (normally made in orbit first) got no texture
+    if (planet) this->pbody->planetType = planet->type;
     this->pbody->CreatePlanetTextures(starid, planetid);
     
-	if ( this->pbody->planetTexture500->w != 500 && this->pbody->planetTexture500->h != 500 ) {
+	if ( this->pbody->planetTexture500 == NULL ||
+	     (this->pbody->planetTexture500->w != 500 && this->pbody->planetTexture500->h != 500) ) {
 		g_game->message("PlanetSurface: Planet texture is invalid");
 		return false;
 	}
