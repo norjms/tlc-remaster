@@ -50,7 +50,8 @@ jobs:
       - name: Smoke test
         shell: bash
         env:
-          SDL_VIDEO_DRIVER: offscreen
+          # offscreen needs EGL, which macOS lacks; dummy works everywhere
+          SDL_VIDEO_DRIVER: ${{ runner.os == 'macOS' && 'dummy' || 'offscreen' }}
           A4_SHOT_FRAMES: "60,200"
           A4_INPUT: "60:click=512,500;150:click=800,658;260:quit"
         run: |
