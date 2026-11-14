@@ -157,7 +157,7 @@ protected:
 	//DataMgr * m_dataMgr;
 
 	// the sound manager
-	//FMOD::System * m_soundSystem;
+
 
 	// nybble moved these here so derived classes can know where they are in relation to
 	// their parent position relative to parent

@@ -1,0 +1,60 @@
+name: Build (Windows x86)
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: x86
+
+      # The project targets v143 (VS 2022). Newer runner images may ship a
+      # newer default toolset; use v143 if present, otherwise the newest one.
+      - name: Pick platform toolset
+        id: toolset
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath
+          $aux = Join-Path $vs 'VC\Auxiliary\Build'
+          $ts = Get-ChildItem $aux -Filter 'Microsoft.VCToolsVersion.v*.default.txt' |
+                ForEach-Object { ($_.Name -split '\.')[2] } | Sort-Object -Descending
+          $pick = if ($ts -contains 'v143') { 'v143' } else { $ts[0] }
+          "Available: $($ts -join ', '); using $pick"
+          "name=$pick" >> $env:GITHUB_OUTPUT
+          "vsdir=$vs" >> $env:GITHUB_OUTPUT
+
+      - name: Build Release|Win32
+        run: >
+          msbuild src\build\msvc10\starflighttlc.sln /m /nologo /v:m
+          /p:Configuration=Release /p:Platform=Win32
+          /p:PlatformToolset=${{ steps.toolset.outputs.name }}
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $dist = 'dist\StarflightTLC'
+          New-Item -ItemType Directory -Force $dist | Out-Null
+          Copy-Item bin\* $dist -Recurse
+          # debug-only binaries are not needed to play
+          'starflighttlcd.exe','msvcr100d.dll','luad.exe','lua5.1d.dll','libnoised.dll','alld42.dll' |
+            ForEach-Object { Remove-Item (Join-Path $dist $_) -ErrorAction SilentlyContinue }
+          # app-local VC++ runtime so players do not need the redistributable
+          $crt = Get-ChildItem "${{ steps.toolset.outputs.vsdir }}\VC\Redist\MSVC\*\x86\Microsoft.VC14*.CRT" -Directory |
+                 Sort-Object FullName -Descending | Select-Object -First 1
+          Copy-Item "$($crt.FullName)\*.dll" $dist
+          Copy-Item LICENSE, README.md $dist
+          "Built from https://github.com/${{ github.repository }}/commit/${{ github.sha }}" |
+            Set-Content (Join-Path $dist 'SOURCE.txt')
+          Get-ChildItem $dist -File | Select-Object Name, Length | Format-Table | Out-String
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StarflightTLC-windows-x86-${{ github.sha }}
+          path: dist

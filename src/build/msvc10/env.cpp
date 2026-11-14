@@ -25,8 +25,6 @@
 // AllegroFont
 #pragma comment(lib,"..\\lib\\alfontdll.lib")
 
-// FMOD
-#pragma comment(lib,"..\\lib\\fmodex_vc.lib")
 
 // platform libs
 #pragma comment(lib,"opengl32.lib")

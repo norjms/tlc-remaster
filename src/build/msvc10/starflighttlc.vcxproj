@@ -14,16 +14,19 @@
     <ProjectGuid>{2C27E004-2CD7-4DC0-B8C9-5F7E20DEEC4C}</ProjectGuid>
     <RootNamespace>starflighttlc</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>starflighttlc</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>false</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -63,6 +66,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4996;4312;4075;4748;4099;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <UseFullPaths>true</UseFullPaths>
+      <ForcedIncludeFiles>cstdint;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <OmitDefaultLibName>false</OmitDefaultLibName>
     </ClCompile>
     <Link>
@@ -79,6 +83,7 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -94,6 +99,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4996;4312;4075;4748;4099;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <UseFullPaths>true</UseFullPaths>
+      <ForcedIncludeFiles>cstdint;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <OutputFile>$(SolutionDir)..\..\..\bin\$(ProjectName).exe</OutputFile>
@@ -111,11 +117,16 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Archive.cpp" />
     <ClCompile Include="..\..\AudioSystem.cpp" />
+    <ClCompile Include="..\..\thirdparty\miniaudio\miniaudio_impl.c">
+      <ForcedIncludeFiles></ForcedIncludeFiles>
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
     <ClCompile Include="..\..\Button.cpp" />
     <ClCompile Include="..\..\CombatObject.cpp" />
     <ClCompile Include="..\..\DataMgr.cpp" />

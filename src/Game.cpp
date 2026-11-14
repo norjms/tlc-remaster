@@ -14,7 +14,6 @@
 #include "env.h"
 #include <allegro.h>
 #include <alfont.h>
-#include <fmod.hpp>
 #include <memory.h>
 #include <cstdio>
 #include <sstream>
@@ -1095,7 +1094,7 @@ void Game::RunGame()
 		//call update on all modules
 		modeMgr->Update();
 
-		//update FMOD
+		//update audio (reclaims finished one-shot voices)
 		audioSystem->Update();
         
         //global abort flag to end game

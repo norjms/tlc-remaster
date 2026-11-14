@@ -1,183 +1,256 @@
+/*
+ * AudioSystem on miniaudio (replaces FMOD Ex).
+ *
+ * Mapping from the FMOD version:
+ *  - FMOD_SYSTEM            -> ma_engine (one per AudioSystem)
+ *  - FMOD_SOUND + CHANNEL   -> ma_sound (one primary voice per Sample)
+ *  - FMOD_CHANNEL_FREE      -> extra ma_sound voices, so the same effect
+ *                              can overlap itself like it did under FMOD
+ *  - FMOD_OUTPUTTYPE_NOSOUND-> engine == NULL; samples still "load" and
+ *                              "play" successfully, they just make no sound
+ *
+ * IsPlaying() works again. Under FMOD it was disabled because of "stack
+ * corruption"; the cause was casting a 1-byte bool* to FMOD's 4-byte
+ * FMOD_BOOL*, not FMOD itself.
+ */
+
+//miniaudio declarations first, before Allegro's headers define int64_t
+//and friends as macros
+#include "thirdparty/miniaudio/miniaudio.h"
+
 #include "env.h"			//for TRACE
 #include "AudioSystem.h"
-#include <fmod_errors.h>    //for FMOD_ErrorString()
 using namespace std;
+
+// ---------------------------------------------------------------------
+// Sample
+// ---------------------------------------------------------------------
 
 Sample::Sample():
 	name(""),
-	sample(NULL),
-	channel(NULL),
-	loop(false), 
-    paused(false)
+	filename(""),
+	loop(false),
+	paused(false),
+	streamed(false),
+	volume(1.0f),
+	owner(NULL),
+	sound(NULL)
 {
 }
 
 Sample::~Sample()
 {
-	if (sample != NULL) 
-    {
-		FMOD_Sound_Release(sample);
-		sample = NULL;
+	//after AudioSystem shuts down, owner is NULL and the voices are gone
+	if (owner != NULL)
+	{
+		ReleaseVoices();
+		owner->Forget(this);
+	}
+}
+
+void Sample::ReleaseVoices()
+{
+	for (size_t i = 0; i < extraVoices.size(); ++i)
+	{
+		ma_sound_uninit(extraVoices[i]);
+		delete extraVoices[i];
+	}
+	extraVoices.clear();
+
+	if (sound != NULL)
+	{
+		ma_sound_uninit(sound);
+		delete sound;
+		sound = NULL;
 	}
 }
 
 /**
     volume is based on 1.0 = 100%
 **/
-void Sample::SetVolume(float volume)
+void Sample::SetVolume(float vol)
 {
-	ASSERT(sample);
+	//perform a reasonable bounds check
+	if (vol < 0.0f || vol > 10.0f) return;
 
-    //perform a reasonable bounds check
-    if (volume < 0.0f || volume > 10.0f) return;
-
-    float freq, vol, pan;
-    int prior;
-    FMOD_Sound_GetDefaults(sample, &freq, &vol, &pan, &prior);
-
-    //send values with new volume
-    FMOD_Sound_SetDefaults(sample, freq, volume, pan, prior);
+	volume = vol;
+	if (sound != NULL) ma_sound_set_volume(sound, volume);
+	for (size_t i = 0; i < extraVoices.size(); ++i)
+		ma_sound_set_volume(extraVoices[i], volume);
 }
 
-/* 
- * put a channel into looping/non-looping state
- * 
+/*
  * doLoop == false --> oneshot playback
  * doLoop == true  --> playback will loop forever
- *
- * you only call this *after* you've called AudioSystem::Play/PlayMusic
  */
 void Sample::SetLoop(bool doLoop)
 {
 	loop = doLoop;
-	FMOD_RESULT res;
-
-	ASSERT(sample);
-	ASSERT(channel);
-	
-	if (loop) {
-		res = FMOD_Channel_SetMode(channel, FMOD_DEFAULT|FMOD_LOOP_NORMAL);
-		ASSERT(res==FMOD_OK);
-
-		//fmod use -1 for infinite looping
-		res = FMOD_Channel_SetLoopCount(channel, -1);
-		ASSERT(res==FMOD_OK);
-	}
-	else {
-		res = FMOD_Channel_SetMode(channel, FMOD_DEFAULT|FMOD_LOOP_OFF);
-		ASSERT(res==FMOD_OK);
-
-		res = FMOD_Channel_SetLoopCount(channel, 0);
-		ASSERT(res==FMOD_OK);
-	}
+	if (sound != NULL) ma_sound_set_looping(sound, doLoop ? MA_TRUE : MA_FALSE);
 }
 
 /*
- * pause/unpause a channel
- *
- * you only call this *after* you've called AudioSystem::Play/PlayMusic
+ * pause/unpause the primary voice; stopping an ma_sound keeps its
+ * cursor, so starting it again resumes where it left off
  */
 void Sample::SetPaused(bool doPause)
 {
-	ASSERT(sample);
-	ASSERT(channel);
 	paused = doPause;
+	if (sound == NULL) return;
 
-	FMOD_RESULT res = FMOD_Channel_SetPaused(channel, paused);
-	if(res != FMOD_OK)
-		debug << "Audiosystem: FMOD_Channel_SetPaused return value was not FMOD_OK but " << res << endl;
+	ma_result res = doPause ? ma_sound_stop(sound) : ma_sound_start(sound);
+	if (res != MA_SUCCESS)
+		debug << "AudioSystem: SetPaused(" << doPause << ") failed for " << filename << ": " << ma_result_description(res) << endl;
 }
 
-AudioSystem::AudioSystem(void)
+// ---------------------------------------------------------------------
+// AudioSystem
+// ---------------------------------------------------------------------
+
+AudioSystem::AudioSystem(void):
+	engine(NULL),
+	bPlay(false)
 {
-	system = NULL;
 }
 
 AudioSystem::~AudioSystem(void)
 {
-	//release all samples
-	for (SampleIterator i = samples.begin(); i != samples.end(); ++i)
+	//release every voice while the engine still exists, then detach the
+	//samples so anything deleted later (e.g. ModeMgr's music) is a no-op
+	for (std::set<Sample*>::iterator i = live.begin(); i != live.end(); ++i)
 	{
-		(*i) = NULL;
+		(*i)->ReleaseVoices();
+		(*i)->owner = NULL;
 	}
+	live.clear();
 
-	FMOD_System_Release(system);
+	//named samples belong to us
+	for (SampleIterator i = samples.begin(); i != samples.end(); ++i)
+		delete (*i);
+	samples.clear();
+
+	if (engine != NULL)
+	{
+		ma_engine_uninit(engine);
+		delete engine;
+		engine = NULL;
+	}
 }
 
 bool AudioSystem::Init()
 {
-	//retrieve global music playback setting
+	//retrieve global audio playback setting
 	bPlay = g_game->getGlobalBoolean("AUDIO_GLOBAL");
 
-	FMOD_RESULT result;
-
-	result = FMOD_System_Create(&system);
-	if (result != FMOD_OK) {
-		debug << "AudioSystem::Init\tFMOD_System_Create issue. (" << result << ") " << FMOD_ErrorString(result) << endl;
-		return false;
+	if (!bPlay)
+	{
+		debug << "AudioSystem::Init: audio disabled by AUDIO_GLOBAL, running silent" << endl;
+		return true;
 	}
 
-	//if we don't wan't audio, set output mode to FMOD_OUTPUTTYPE_NOSOUND
-	if (!bPlay) {
-		result = FMOD_System_SetOutput(system, FMOD_OUTPUTTYPE_NOSOUND);
-		if (result != FMOD_OK) { 
-			debug << "AudioSystem::Init\tUnable to set output mode to FMOD_OUTPUTTYPE_NOSOUND (" << result << ") " << FMOD_ErrorString(result) << endl;
-			return false;
-		}
+	engine = new ma_engine;
+	ma_engine_config config = ma_engine_config_init();
+	ma_result res = ma_engine_init(&config, engine);
+	if (res != MA_SUCCESS)
+	{
+		//same fallback FMOD had: keep going with sound disabled
+		debug << "AudioSystem::Init: ma_engine_init failed (" << ma_result_description(res) << "), running silent" << endl;
+		delete engine;
+		engine = NULL;
+		return true;
 	}
 
-
-	result = FMOD_System_Init(system,100,FMOD_INIT_NORMAL,NULL);
-	if (result != FMOD_OK) 
-    {
-		debug << "AudioSystem::Init\tFMOD_System_Init issue. (" << result << ") " << FMOD_ErrorString(result) << endl;
-
-		//Trying again with sound disabled, unless we already tried that as a result of global settings
-		if(!bPlay) return false;
-		
-		debug << "AudioSystem::Init: Trying again with sound disabled..." << endl;
-
-		result = FMOD_System_SetOutput(system, FMOD_OUTPUTTYPE_NOSOUND);
-		if (result != FMOD_OK) { 
-			debug << "AudioSystem::Init: Unable to set output mode to FMOD_OUTPUTTYPE_NOSOUND (" << result << ") " << FMOD_ErrorString(result) << endl;
-			return false;
-		}
-
-		result = FMOD_System_Init(system,100,FMOD_INIT_NORMAL,NULL);
-		if (result != FMOD_OK) {
-			debug << "AudioSystem::Init: Unable to initialize FMOD, even in FMOD_OUTPUTTYPE_NOSOUND mode. (" << result << ") " << FMOD_ErrorString(result) << endl;
-			return false;
-		}
-	}
-
+	debug << "AudioSystem::Init: miniaudio " << MA_VERSION_STRING << " on " << ma_engine_get_sample_rate(engine) << " Hz" << endl;
 	return true;
 }
 
+/*
+ * Once per frame: reclaim overlapping one-shot voices that have finished.
+ * (miniaudio mixes on its own thread, so nothing else needs pumping.)
+ */
 void AudioSystem::Update()
 {
-	FMOD_System_Update(system);
+	if (engine == NULL) return;
+
+	for (std::set<Sample*>::iterator i = live.begin(); i != live.end(); ++i)
+	{
+		std::vector<ma_sound*> &voices = (*i)->extraVoices;
+		size_t n = 0;
+		while (n < voices.size())
+		{
+			if (!ma_sound_is_playing(voices[n]) && ma_sound_at_end(voices[n]))
+			{
+				ma_sound_uninit(voices[n]);
+				delete voices[n];
+				voices.erase(voices.begin() + n);
+			}
+			else ++n;
+		}
+	}
 }
 
+ma_sound *AudioSystem::CreateVoice(Sample *sample)
+{
+	if (engine == NULL) return NULL;
+
+	//effects are decoded into memory once (the resource manager caches them
+	//by file name, so extra voices share the data); music is streamed
+	ma_uint32 flags = MA_SOUND_FLAG_NO_SPATIALIZATION;
+	flags |= sample->streamed ? MA_SOUND_FLAG_STREAM : MA_SOUND_FLAG_DECODE;
+
+	ma_sound *voice = new ma_sound;
+	ma_result res = ma_sound_init_from_file(engine, sample->filename.c_str(), flags, NULL, NULL, voice);
+	if (res != MA_SUCCESS)
+	{
+		debug << "AudioSystem: could not open " << sample->filename << ": " << ma_result_description(res) << endl;
+		delete voice;
+		return NULL;
+	}
+
+	ma_sound_set_volume(voice, sample->volume);
+	return voice;
+}
+
+Sample *AudioSystem::CreateSample(const std::string &filename, float volume, bool stream)
+{
+	Sample *sample = new Sample();
+	sample->filename = filename;
+	sample->streamed = stream;
+	sample->volume = volume;
+	sample->owner = this;
+	live.insert(sample);
+
+	//silent mode: the sample exists but has no voice
+	if (engine == NULL) return sample;
+
+	sample->sound = CreateVoice(sample);
+	if (sample->sound == NULL)
+	{
+		delete sample;	//destructor calls Forget()
+		return NULL;
+	}
+	return sample;
+}
+
+void AudioSystem::Forget(Sample *sample)
+{
+	live.erase(sample);
+
+	SampleIterator i = samples.begin();
+	while (i != samples.end())
+	{
+		if ((*i) == sample) i = samples.erase(i);
+		else ++i;
+	}
+}
 
 Sample* AudioSystem::Load(std::string filename, float volume)
 {
-	if (filename.length() == 0) return false;
+	if (filename.length() == 0) return NULL;
 
-	Sample *sample = NULL;
-    sample = new Sample();
-
-	try {
-		FMOD_RESULT res = FMOD_System_CreateSound(system, filename.c_str(), FMOD_DEFAULT, NULL, &sample->sample);
-		if (res != FMOD_OK) {
-			sample = NULL;
-		}
-	} catch (...) {
-		sample = NULL;
-	}
-	ASSERT(sample);
-	ASSERT(sample->sample);
-
-	sample->SetVolume(volume);
+	Sample *sample = CreateSample(filename, volume, false);
+	if (sample == NULL)
+		debug << "AudioSystem::Load: Could not load " << filename << endl;
 	return sample;
 }
 
@@ -185,109 +258,74 @@ bool AudioSystem::Load(std::string filename, std::string name, float volume)
 {
 	if (filename.length() == 0 || name.length() == 0) return false;
 
-	Sample *sample = NULL;
-    sample = new Sample();
-	sample->setName(name);
-
-	try {
-		FMOD_RESULT res = FMOD_System_CreateSound(system, filename.c_str(), FMOD_DEFAULT, NULL, &sample->sample);
-		if (res != FMOD_OK) {
-			debug << "AudioSystem::Load: Could not load " << filename << ", string " << name << endl;
-			return false;
-		}
-	} catch (...) {
+	Sample *sample = CreateSample(filename, volume, false);
+	if (sample == NULL)
+	{
 		debug << "AudioSystem::Load: Could not load " << filename << ", string " << name << endl;
 		return false;
 	}
-	ASSERT(sample);
-	ASSERT(sample->sample);
-	
-	sample->SetVolume(volume);
-	samples.push_back(sample);
 
+	sample->setName(name);
+	samples.push_back(sample);
 	return true;
 }
 
 Sample* AudioSystem::LoadMusic(std::string filename, float volume)
 {
-	return Load(filename, volume);
+	if (filename.length() == 0) return NULL;
+
+	Sample *sample = CreateSample(filename, volume, true);
+	if (sample == NULL)
+		debug << "AudioSystem::LoadMusic: Could not load " << filename << endl;
+	return sample;
 }
 
 bool AudioSystem::LoadMusic(std::string filename, std::string name, float volume)
 {
-	return Load(filename, name, volume);
+	if (filename.length() == 0 || name.length() == 0) return false;
+
+	Sample *sample = CreateSample(filename, volume, true);
+	if (sample == NULL)
+	{
+		debug << "AudioSystem::LoadMusic: Could not load " << filename << ", string " << name << endl;
+		return false;
+	}
+
+	sample->setName(name);
+	samples.push_back(sample);
+	return true;
 }
 
 bool AudioSystem::SampleExists(std::string name)
 {
-	for (SampleIterator i = samples.begin(); i != samples.end(); ++i)
-	{
-		if ((*i)->getName() == name)
-		{
-			return true;
-		}
-	}
-
-	return false;
+	return FindSample(name) != NULL;
 }
 
-//FMOD_Channel_IsPlaying is broken (causes stack corruption on windows).
-//We don't know as of yet if we are the one to blame for that breakage or if this
-//is caused by either fmod or one of the things that fmod use.
-//We make this function inconditionally returns false for the time being since this
-//is known to work for everything but looping music, which we now handle with fmod
-//builtin looping so that it does not rely on a working IsPlaying.
 bool AudioSystem::IsPlaying(std::string name)
 {
-	return false;
-/*
-	Sample *samp = FindSample(name);
-	if (samp == NULL){
-		debug << "IsPlaying: samp was NULL for sample %s\n", name.c_str());
-		return false;
-	}
-    if (samp->sample == NULL){
-		debug << "IsPlaying: samp->sample was NULL for sample %s\n", name.c_str());
-		return false;
-	}
-    if (samp->channel == NULL){
-		debug << "IsPlaying: samp->channel was NULL for sample %s\n", name.c_str());
-		return false;
-	}
-
-	bool playing = false;
-	FMOD_RESULT res= FMOD_Channel_IsPlaying(samp->channel, (FMOD_BOOL *) &playing);
-	if (res != FMOD_OK)
-		debug << "IsPlaying: FMOD_Channel_IsPlaying return value was not FMOD_OK but %d\n", res);
-	
-	return playing;
-*/
+	return IsPlaying(FindSample(name));
 }
 
 bool AudioSystem::IsPlaying(Sample *sample)
 {
-	//FMOD_Channel_IsPlaying is broken (causes stack corruption on windows).
-	//bool playing;
-	//FMOD_RESULT res= FMOD_Channel_IsPlaying(sample->channel, (FMOD_BOOL *) &playing);
-	//return playing;
+	if (sample == NULL || sample->sound == NULL) return false;
+
+	if (ma_sound_is_playing(sample->sound)) return true;
+	for (size_t i = 0; i < sample->extraVoices.size(); ++i)
+		if (ma_sound_is_playing(sample->extraVoices[i])) return true;
+
 	return false;
 }
 
-
 Sample *AudioSystem::FindSample(std::string name)
 {
-	Sample *sample = NULL;
 	for (SampleIterator i = samples.begin(); i != samples.end(); ++i)
 	{
 		if ((*i)->getName() == name)
-		{
-			sample = (*i);
-			break;
-		}
+			return (*i);
 	}
-	return sample;
+	return NULL;
 }
-
 
 bool AudioSystem::Play(std::string name, bool doLoop)
 {
@@ -295,27 +333,13 @@ bool AudioSystem::Play(std::string name, bool doLoop)
 	if (!bPlay) return true;
 
 	Sample *sample = FindSample(name);
-	if (sample == NULL || sample->sample == NULL){
+	if (sample == NULL)
+	{
 		debug << "AudioSystem::Play: Could not play " << name << ": no such sample" << endl;
 		return false;
 	}
 
-	try {
-		//sample found, play it
-		FMOD_RESULT res = FMOD_System_PlaySound(system,FMOD_CHANNEL_FREE, sample->sample, true, &sample->channel);
-		if (res!= FMOD_OK) return false;
-
-		ASSERT(sample->channel);
-
-		sample->SetLoop(doLoop);
-		sample->SetPaused(false);
-
-	} catch (...) {
-		debug << "AudioSystem::Play: Could not play " << name << endl;
-		return false;
-	}
-
-	return true;
+	return Play(sample, doLoop);
 }
 
 bool AudioSystem::Play(Sample *sample, bool doLoop)
@@ -323,25 +347,46 @@ bool AudioSystem::Play(Sample *sample, bool doLoop)
 	//prevent playback based on global setting
 	if (!bPlay) return true;
 
-	if (sample == NULL || sample->sample == NULL){
+	if (sample == NULL)
+	{
 		debug << "AudioSystem::Play: Cannot play NULL sample" << endl;
 		return false;
 	}
 
-	try {
-		FMOD_RESULT res = FMOD_System_PlaySound(system,FMOD_CHANNEL_FREE,sample->sample,true,&sample->channel);
-		if (res!= FMOD_OK) return false;
+	//silent mode
+	if (engine == NULL) return true;
+	if (sample->sound == NULL) return false;
 
-		ASSERT(sample->channel);
-
-		sample->SetLoop(doLoop);
-		sample->SetPaused(false);
-
-	} catch (...) {
-		debug << "AudioSystem::Play: Could not play sample" << endl;
-		return false;
+	//FMOD started each play on a free channel, so a one-shot effect could
+	//overlap itself; do the same with an extra voice
+	if (!doLoop && !sample->loop && ma_sound_is_playing(sample->sound))
+	{
+		ma_sound *voice = CreateVoice(sample);
+		if (voice != NULL)
+		{
+			ma_sound_set_looping(voice, MA_FALSE);
+			if (ma_sound_start(voice) == MA_SUCCESS)
+			{
+				sample->extraVoices.push_back(voice);
+				return true;
+			}
+			ma_sound_uninit(voice);
+			delete voice;
+		}
+		//otherwise fall through and restart the primary voice
 	}
 
+	ma_sound_stop(sample->sound);
+	ma_sound_seek_to_pcm_frame(sample->sound, 0);
+	sample->SetLoop(doLoop);
+	sample->paused = false;
+
+	ma_result res = ma_sound_start(sample->sound);
+	if (res != MA_SUCCESS)
+	{
+		debug << "AudioSystem::Play: Could not play " << sample->filename << ": " << ma_result_description(res) << endl;
+		return false;
+	}
 	return true;
 }
 
@@ -358,49 +403,53 @@ bool AudioSystem::PlayMusic(Sample *sample, bool doLoop)
 void AudioSystem::PauseMusic(std::string name)
 {
 	Sample *sample = FindSample(name);
-	if (sample == NULL || sample->sample == NULL || sample->channel == NULL)
-    {
+	if (sample == NULL)
+	{
 		debug << "AudioSystem::PauseMusic: Could not pause " << name << endl;
 		return;
 	}
-
 	sample->SetPaused(true);
 }
 
 void AudioSystem::UnpauseMusic(std::string name)
 {
 	Sample *sample = FindSample(name);
-	if (sample == NULL || sample->sample == NULL || sample->channel == NULL)
-    {
+	if (sample == NULL)
+	{
 		debug << "AudioSystem::UnpauseMusic: Could not unpause " << name << endl;
 		return;
 	}
-
 	sample->SetPaused(false);
 }
+
 void AudioSystem::Stop(std::string name)
 {
-//Why do IsPlaying() here? We apparently don't need it in the other Stop()
-//	if (!IsPlaying(name)) return;
-
-	Sample *sample = FindSample(name);
-	if (sample == NULL) return;
-
-	FMOD_Channel_Stop(sample->channel);
+	Stop(FindSample(name));
 }
 
 void AudioSystem::Stop(Sample *sample)
 {
 	if (sample == NULL) return;
-	FMOD_Channel_Stop(sample->channel);
+
+	for (size_t i = 0; i < sample->extraVoices.size(); ++i)
+	{
+		ma_sound_uninit(sample->extraVoices[i]);
+		delete sample->extraVoices[i];
+	}
+	sample->extraVoices.clear();
+
+	if (sample->sound != NULL)
+	{
+		ma_sound_stop(sample->sound);
+		ma_sound_seek_to_pcm_frame(sample->sound, 0);
+	}
+	sample->paused = false;
 }
 
 void AudioSystem::StopAll()
 {
 	for (SampleIterator i = samples.begin(); i != samples.end(); ++i)
-	{
-		FMOD_Channel_Stop( (*i)->channel );
-	}
+		Stop(*i);
 }
 
 void AudioSystem::StopAllExcept(std::string name)
@@ -408,22 +457,28 @@ void AudioSystem::StopAllExcept(std::string name)
 	for (SampleIterator i = samples.begin(); i != samples.end(); ++i)
 	{
 		if ((*i)->getName() != name)
-		{
-			FMOD_Channel_Stop( (*i)->channel );
-		}
+			Stop(*i);
 	}
 }
 
 void AudioSystem::Delete(std::string name)
 {
+	//pull the matches out first; deleting a Sample edits this vector
+	std::vector<Sample*> doomed;
 	SampleIterator i = samples.begin();
 	while (i != samples.end())
 	{
 		if ((*i)->getName() == name)
 		{
-			Stop( (*i) );
+			doomed.push_back(*i);
 			i = samples.erase(i);
 		}
-		else i++;
+		else ++i;
+	}
+
+	for (size_t n = 0; n < doomed.size(); ++n)
+	{
+		Stop(doomed[n]);
+		delete doomed[n];
 	}
 }

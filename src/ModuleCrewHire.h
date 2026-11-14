@@ -10,7 +10,6 @@
 
 #include "env.h"
 #include <allegro.h>
-#include <fmod.hpp>
 #include "tinyxml/tinyxml.h"
 #include "Module.h"
 #include "GameState.h"

@@ -1,0 +1,20 @@
+# Visual Studio build output
+src/build/msvc10/Debug/
+src/build/msvc10/Release/
+src/build/msvc10/.vs/
+*.pdb
+*.ilk
+*.iobj
+*.ipdb
+*.user
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.opendb
+
+# Runtime output written next to the exe
+bin/output.txt
+bin/starflighttlc.exe
+
+# Packaging
+dist/

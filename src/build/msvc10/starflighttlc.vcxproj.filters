@@ -180,6 +180,9 @@
     <ClCompile Include="..\..\AudioSystem.cpp">
       <Filter>engine\core engine</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\thirdparty\miniaudio\miniaudio_impl.c">
+      <Filter>engine\core engine</Filter>
+    </ClCompile>
     <ClCompile Include="env.cpp">
       <Filter>engine\core engine</Filter>
     </ClCompile>

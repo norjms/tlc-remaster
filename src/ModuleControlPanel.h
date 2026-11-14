@@ -13,7 +13,6 @@
 
 #include "env.h"
 #include <allegro.h>
-#include <fmod.hpp>
 #include "Module.h"
 #include "DataMgr.h"
 #include "AudioSystem.h"
