@@ -687,6 +687,10 @@ void Game::Run()
 	debug << "\nLaunching game loop..." << endl;
 	while (m_keepRunning)
 	{
+#ifdef A4SDL
+		//window close button
+		if (a4_close_requested()) { m_keepRunning = false; break; }
+#endif
 		try {
 			RunGame();
 		}
@@ -766,6 +770,12 @@ bool Game::Initialize_Graphics()
     
     //set text mode to reset graphics
     set_gfx_mode(GFX_TEXT,0,0,0,0);
+
+#ifdef A4SDL
+    //the game always renders at its internal resolution; SDL scales that
+    //to the window (any size, fullscreen, high-DPI) with letterboxing
+    a4_set_logical_size(SCREEN_WIDTH, SCREEN_HEIGHT);
+#endif
 
     //try to set graphics mode
 	if (set_gfx_mode(gfxmode, actual_width, actual_height, 0, 0) != 0)
@@ -1221,7 +1231,7 @@ void Game::RunGame()
     //
 	//Copy back buffer to the screen (with resolution scaling)
     //
-    int cx = (actual_width-scale_width)/2;
+    int cx = (screen->w - scale_width)/2;   //same as actual_width under Allegro
     stretch_blit( m_backbuffer, screen, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, cx, 0, scale_width, scale_height );
 
 	//slow down!

@@ -18,3 +18,12 @@ bin/starflighttlc.exe
 
 # Packaging
 dist/
+
+# CMake build trees
+build*/
+
+# Written by the game at runtime
+bin/data/planetorbit/planet_*_1024.bmp
+bin/newcaptain.dat
+bin/saves/savegame-*.dat
+bin/starflighttlc

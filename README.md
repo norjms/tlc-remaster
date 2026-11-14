@@ -8,9 +8,23 @@ In 2017-18, we worked on a major revision in an attempt to support multiple reso
 
 <i>The new remastered edition has higher-resolution planet textures.</i>
 
-## Building with Visual Studio 2022 (this fork)
+## Building on Windows, Linux and macOS (this fork)
 
-This fork builds with **Visual Studio 2022** (toolset v143, Release|Win32) against the existing prebuilt libraries, with no rebuild of Allegro, Lua or libnoise needed:
+The game now builds with CMake on all three desktop platforms. Allegro 4 is replaced by **a4sdl** (`src/platform/a4sdl`), a small layer that implements the Allegro 4 and AllegroFont calls the game uses on top of [SDL3](https://libsdl.org), so the game code itself is essentially unchanged. Rendering is still the game's own software renderer at 1024x768; SDL scales the finished frame to any window size, fullscreen or high-DPI display with letterboxing. Lua 5.1.5, libnoise, miniaudio and stb are built from source in `src/thirdparty`; SDL3 is used from the system if installed, otherwise downloaded and built automatically.
+
+```
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release
+cmake --install build --config Release --prefix dist/StarflightTLC
+```
+
+`dist/StarflightTLC` is then a self-contained, playable folder (on macOS, `starflighttlc.app` with the game data inside). For development you can also run the executable straight from the build folder; it finds `bin/data` in the source tree on its own.
+
+Linux needs the usual SDL3 development packages (X11/Wayland, ALSA/PulseAudio headers); see `.github/workflows/build-cmake.yml` for the exact list. Every push is built and smoke-tested on Windows, Linux and macOS by GitHub Actions.
+
+## Building with the legacy Visual Studio project
+
+The original Visual Studio project is still here for comparison. This fork builds with **Visual Studio 2022** (toolset v143, Release|Win32) against the existing prebuilt libraries, with no rebuild of Allegro, Lua or libnoise needed:
 
 1. Install Visual Studio 2022 with the "Desktop development with C++" workload.
 2. Open `src/build/msvc10/starflighttlc.sln` and build **Release | Win32**, or from a Developer Command Prompt:
