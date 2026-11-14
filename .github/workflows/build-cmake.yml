@@ -105,7 +105,7 @@ jobs:
           kill $pid 2>/dev/null || true
           wait $pid || echo "game exit code $?"
           # signed/read-only installs write to the per-user game folder
-          log=$(find dist "$HOME/Library/Application Support/Starflight" "$HOME/.local/share/Starflight" -name output.txt 2>/dev/null | head -1)
+          log=$( (find dist "$HOME/Library/Application Support/Starflight" "$HOME/.local/share/Starflight" -name output.txt 2>/dev/null || true) | head -1)
           cp "$log" smoke-output.txt
           rm -f "$log"
           tail -n 25 smoke-output.txt
