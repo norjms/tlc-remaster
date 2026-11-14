@@ -4,18 +4,11 @@
 
 #include "env.h"
 
-#if defined(_POSIX_SOURCE)
-#include <sys/time.h>
-#endif
-
 class Timer
 {
 private:
 	long timer_start;
 	long stopwatch_start;
-	#if defined(_POSIX_SOURCE)
-	timeval initial;
-	#endif
 
 public:
 	Timer(void);

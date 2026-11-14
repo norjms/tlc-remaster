@@ -3,13 +3,20 @@
 using namespace std;
 #include "LogFile.h"
 
-std::ofstream out("output.txt");
+//Opened on first use rather than during static initialization, so it
+//lands in the game's working directory (set up at the start of main) and
+//never runs before or after the streams library. Every translation unit
+//has its own 'debug' LogFile, so none of them closes the shared stream;
+//it closes itself at exit.
+static std::ofstream& logstream()
+{
+    static std::ofstream f("output.txt");
+    return f;
+}
+#define out logstream()
 
 LogFile::LogFile() {}
-LogFile::~LogFile()
-{
-    if (out.good()) out.close();
-}
+LogFile::~LogFile() {}
 void LogFile::Print(string s)
 {
     out << s << endl;

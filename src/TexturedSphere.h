@@ -19,7 +19,7 @@ private:
     int TEX_SIZE;
     int MAP_SIZE;
     double ASPECT_RATIO;
-    double M_PI;
+    double m_pi;
     int *coord_transform_table;
     int *screen2sphere_table;
     int *tex_table; 
