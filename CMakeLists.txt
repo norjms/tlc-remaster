@@ -21,6 +21,10 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)
 endif()
 
+# Windows: link the C/C++ runtime statically so the game is one
+# self-contained .exe (no Visual C++ redistributable needed)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
 option(TLC_FETCH_SDL "Fetch and build SDL3 if it is not installed" ON)
 set(TLC_SDL_TAG "release-3.4.20" CACHE STRING "SDL3 tag used when fetching")
 
