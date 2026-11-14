@@ -172,7 +172,9 @@ void Game::fatalerror(std::string error)
 	try {
 		debug << error << endl;
 		message(error);
-		g_game->modeMgr->CloseCurrentModule();
+		//modeMgr is NULL when initialization itself failed (this used to be
+		//swallowed by catch(...) only because MSVC builds use /EHa)
+		if (g_game->modeMgr) g_game->modeMgr->CloseCurrentModule();
 		this->Stop();
 	}
 	catch(...){
