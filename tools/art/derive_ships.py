@@ -5,6 +5,10 @@ Reads the ORIGINAL sprites from <repo>/bin/data, writes new files with the same
 names, sizes and formats under <out_data_dir> (a mirror of bin/data).
 Each derived image is placed exactly like the original: same rotation, same
 bounding box. Planet-surface frames keep their original thruster-flame pixels.
+
+Next to each file it also writes high resolution tiers, name@2x.png and
+name@4x.png (RGBA, exactly 2x and 4x the size), rendered from the master. The
+game picks the tier that suits the display (see a4sdl load_bitmap).
 """
 import os, sys
 import numpy as np
@@ -61,12 +65,28 @@ def fit(master, rot, target_shape, box):
     canvas.paste(m, (x0, y0))
     return np.asarray(canvas, np.uint8).copy()
 
+TIERS = (2, 4)
+
+def tier_path(rel, n):
+    return os.path.join(out, os.path.splitext(rel)[0] + f'@{n}x.png')
+
+def scale_box(box, n):
+    return tuple(v * n for v in box)
+
+def save_tier(arr, rel, n):
+    os.makedirs(os.path.dirname(tier_path(rel, n)), exist_ok=True)
+    Image.fromarray(arr, 'RGBA').save(tier_path(rel, n))
+
 report = []; tiles = []
 def derive(name, rel, master, orig_src):
     target, fmt = load_rgba(os.path.join(DATA, rel))
     iou, rot = best_rotation(orig_src, target[..., 3])
-    new = fit(master, rot, target.shape, bbox(target[..., 3]))
+    box = bbox(target[..., 3])
+    new = fit(master, rot, target.shape, box)
     save(new, os.path.join(out, rel), fmt)
+    h, w = target.shape[:2]
+    for n in TIERS:
+        save_tier(fit(master, rot, (h * n, w * n), scale_box(box, n)), rel, n)
     report.append(f'{rel}: rotation {rot}, silhouette match {iou:.2f}')
     tiles.append((rel, target, new))
 
@@ -85,6 +105,17 @@ def derive_strip(name, rel, master, orig_src):
         out_frames.append(nf)
     new = np.concatenate(out_frames, axis=1)
     save(new, os.path.join(out, rel), fmt)
+    box = bbox(base[..., 3])
+    for k in TIERS:
+        big_base = fit(master, rot, (h * k, h * k, 4), scale_box(box, k))
+        tf = []
+        for f in frames:
+            diff = (np.abs(f.astype(np.int16) - base.astype(np.int16)).max(2) > 24) & (f[..., 3] > 127)
+            d = np.kron(diff, np.ones((k, k), bool))
+            fk = np.kron(f, np.ones((k, k, 1), np.uint8))
+            nf = big_base.copy(); nf[d] = fk[d]
+            tf.append(nf)
+        save_tier(np.concatenate(tf, axis=1), rel, k)
     report.append(f'{rel}: {n} frames, rotation {rot}, silhouette match {iou:.2f}')
     tiles.append((rel, strip, new))
 
