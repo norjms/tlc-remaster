@@ -1,6 +1,6 @@
-{"6": {"image": "sf8_cap.png"},
+{"6": {"image": "sf8_nasa2.png"},
  "39": {"pixal3d_multiview": false, "backend": "sdpa", "sparse_backend": "xformers"},
- "265": {"string_a": "sf8_captain"},
- "266": {"string_a": "sf8_captain"},
+ "265": {"string_a": "sf8_nasa2"},
+ "266": {"string_a": "sf8_nasa2"},
  "218": {"target_face_num": 200000},
  "257": {"target_face_num": 120000}}

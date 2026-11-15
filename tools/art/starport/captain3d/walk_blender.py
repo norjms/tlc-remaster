@@ -29,7 +29,70 @@ lo, hi = V.min(0), V.max(0)
 s = 1.8 / (hi[2] - lo[2])
 c = np.array([(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, lo[2]])
 body.data.transform(Matrix.Diagonal((s, s, s, 1)) @ Matrix.Translation(Vector(-c)))
+"""Inserted into walk_blender.py after normalisation: remove a backpack (geometry behind the torso) and close the back.
+Character faces -Y, so the back is +Y."""
+import bmesh
+def cut_pack(body, H, margin=0.03):
+    me = body.data
+    bm = bmesh.new(); bm.from_mesh(me)
+    uvl = bm.loops.layers.uv.active
+    vs = np.array([v.co[:] for v in bm.verts])
+    waist = vs[(vs[:, 2] > 0.44 * H) & (vs[:, 2] < 0.50 * H) & (np.abs(vs[:, 0]) < 0.15)]
+    yb = np.percentile(waist[:, 1], 97) + margin
+    print('pack cut at y >', yb)
+    # a UV on the back of the waist, to texture the new back panel
+    best = None
+    for f in bm.faces:
+        c = f.calc_center_median()
+        if 0.46 * H < c.z < 0.50 * H and abs(c.x) < 0.06 and c.y > yb - margin - 0.03 and f.normal.y > 0.5:
+            best = f; break
+    uv0 = best.loops[0][uvl].uv.copy() if (best is not None and uvl) else None
+    kill = [v for v in bm.verts if v.co.y > yb and 0.50 * H < v.co.z < 0.92 * H and abs(v.co.x) < 0.36]
+    bmesh.ops.delete(bm, geom=kill, context='VERTS')
+    edges = [e for e in bm.edges if e.is_boundary]
+    before = set(bm.faces)
+    bmesh.ops.holes_fill(bm, edges=edges, sides=0)
+    new = [f for f in bm.faces if f not in before]
+    if new:
+        bmesh.ops.triangulate(bm, faces=new)
+        new = [f for f in bm.faces if f not in before]
+        for f in new:
+            f.normal_update()
+            if uv0 is not None:
+                for l in f.loops: l[uvl].uv = uv0
+    print('pack verts removed', len(kill), 'faces added', len(new))
+    bm.normal_update(); bm.to_mesh(me); bm.free(); me.update()
+
+
+def cut_floaters(body, H, frac=0.04):
+    """Remove disconnected mesh islands smaller than frac of the vertices, and anything well in front of the chest."""
+    me = body.data
+    bm = bmesh.new(); bm.from_mesh(me); bm.verts.ensure_lookup_table()
+    seen = set(); islands = []
+    for v in bm.verts:
+        if v.index in seen: continue
+        st = [v]; comp = []; seen.add(v.index)
+        while st:
+            x = st.pop(); comp.append(x)
+            for e in x.link_edges:
+                o = e.other_vert(x)
+                if o.index not in seen: seen.add(o.index); st.append(o)
+        islands.append(comp)
+    n = len(bm.verts); kill = []
+    vs = np.array([v.co[:] for v in bm.verts])
+    belly = vs[(vs[:, 2] > 0.52 * H) & (vs[:, 2] < 0.56 * H) & (np.abs(vs[:, 0]) < 0.12)]
+    yf = np.percentile(belly[:, 1], 3) - float(os.environ.get('FRONT_MARGIN', '0.05'))
+    ks = set(kill)
+    kill += [v for v in bm.verts if v not in ks and v.co.y < yf and 0.55 * H < v.co.z < 0.86 * H and abs(v.co.x) < 0.2]
+    print('islands', sorted(len(c) for c in islands)[-6:], 'front cut y <', yf, 'removed', len(kill))
+    bmesh.ops.delete(bm, geom=kill, context='VERTS')
+    bm.to_mesh(me); bm.free(); me.update()
+
 V = np.array([v.co[:] for v in body.data.vertices]); H = 1.8
+if os.environ.get('CUT_PACK') == '1':
+    cut_pack(body, H, float(os.environ.get('PACK_MARGIN', '0.03')))
+    cut_floaters(body, H)
+    V = np.array([v.co[:] for v in body.data.vertices])
 print('bounds', V.min(0), V.max(0), 'verts', len(V))
 
 def band(z0, z1):
@@ -67,7 +130,7 @@ for sd, nm in ((1, 'L'), (-1, 'R')):
     wrist = shp + (hp - shp) * 0.88; elbow = shp + (wrist - shp) * 0.5 + Vector((0, 0.015, 0))
     bone(f'upper_arm.{nm}', shp, elbow, 'spine')
     bone(f'forearm.{nm}', elbow, wrist, f'upper_arm.{nm}', True)
-    bone(f'hand.{nm}', wrist, hp + (hp - shp).normalized() * 0.04, f'forearm.{nm}', True)
+    bone(f'hand.{nm}', wrist, hp + (hp - shp).normalized() * 0.15, f'forearm.{nm}', True)
 segs = {b.name: (np.array(b.head[:]), np.array(b.tail[:])) for b in eb}
 bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -79,10 +142,11 @@ for j, n in enumerate(names):
     t = np.clip(((V - a) @ ab) / (ab @ ab), 0, 1)
     D[:, j] = np.linalg.norm(V - (a + t[:, None] * ab), axis=1)
 x, z = V[:, 0], V[:, 2]
+nearhand = D[:, [names.index(k) for k in ('hand.L', 'hand.R', 'forearm.L', 'forearm.R')]].min(1)
 for j, n in enumerate(names):
     if n.endswith('.L'): D[x < -0.01, j] = 9
     if n.endswith('.R'): D[x > 0.01, j] = 9
-    if n.startswith(('thigh', 'shin', 'foot')): D[z > hipz + 0.04, j] = 9
+    if n.startswith(('thigh', 'shin', 'foot')): D[(z > hipz + 0.04) | (nearhand < 0.10), j] = 9
     if n.startswith(('upper_arm', 'forearm', 'hand')): D[np.abs(x) < shx * 0.75, j] = 9
 W = 1.0 / np.maximum(D, 1e-3) ** 6
 W[D > 8] = 0

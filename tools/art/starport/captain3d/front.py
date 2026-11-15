@@ -26,11 +26,12 @@ def txt2img(prompt, w, h, prefix, seed):
             i = h_[pid]['outputs']['8']['images'][0]
             return os.path.join(COMFY, 'output', i.get('subfolder', ''), i['filename'])
 
-P = ('full body 3D character render of a starship captain in a sci-fi spacesuit, standing in A-pose, arms slightly away from the body, '
+P = ('full body 3D character render of an astronaut in a plain all-white fabric pressure spacesuit, standing in A-pose, arms slightly away from the body, '
      'front view facing the camera, symmetrical, whole figure visible head to boots, '
-     'dark slate grey armoured spacesuit with lighter grey chest plate and segmented belt, round helmet with large amber tinted visor, '
-     'small backpack with glowing orange light tubes, black gloves, black boots, knee pads, '
-     'plain white background, soft studio lighting, game character model, no shadow')
+     'soft white woven fabric pressure suit with quilted layers, folds and creases, ribbed joints at elbows and knees, metal connector rings at the neck and wrists, '
+     'small chest control box, white gloves, white moon boots, round white helmet with gold reflective visor, '
+     'completely blank unmarked white fabric everywhere, clean unbranded suit, '
+     'plain light grey background, soft studio lighting, realistic, no shadow')
 if __name__ == '__main__':
-    for i, seed in enumerate([11, 23, 37, 51]):
-        shutil.copy(txt2img(P, 768, 1152, f'sf8_front_{i}', seed), rf'{OUT}\front_{i}.png'); print(i, flush=True)
+    for i, seed in enumerate([5, 13, 29, 61, 88, 101]):
+        shutil.copy(txt2img(P, 768, 1152, f'sf8_nasb_{i}', seed), rf'{OUT}\nasb_{i}.png'); print(i, flush=True)
