@@ -4,7 +4,7 @@ import os, sys, glob
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 DATA, FR = sys.argv[1], sys.argv[2]
-TINT = np.array([float(v) for v in (sys.argv[3] if len(sys.argv) > 3 else '0.66,0.62,0.56').split(',')])
+TINT = np.array([float(v) for v in (sys.argv[3] if len(sys.argv) > 3 else '0.86,0.82,0.75').split(',')])
 S = 948; FW = 237
 fs = sorted(glob.glob(os.path.join(FR, 'walk_*.png'))); N = len(fs)
 sheet = Image.new('RGBA', (S * N, S * 2), (0, 0, 0, 0))

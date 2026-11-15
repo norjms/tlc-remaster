@@ -9,5 +9,5 @@
    by distance to bone segments, keys a 16-frame walk, keeps the feet on the
    floor and renders an orthographic side view with the concourse lighting.
    Env: ARM_DOWN=-20 KEY=320 ORTHO=1.06. "views" mode renders check views.
-5. install_walk.py <bin/data> <out dir>: slate grade, contact shadow, mirrored
+5. install_walk.py <bin/data> <out dir>: light warm grade (0.86, 0.82, 0.75), contact shadow, mirrored
    row, writes starport_avatar.png (+@2x, @4x).
