@@ -1,0 +1,18 @@
+# images for code that indexes this group, in object order (formerly tradedepot.dat)
+generic_exit_btn_norm.bmp
+generic_exit_btn_over.bmp
+from_dat/tradedepot_background.bmp
+tradedepot_btn.bmp
+tradedepot_btn_mo.bmp
+tradedepot_cursor0.bmp
+tradedepot_cursor1.bmp
+tradedepot_filterbtn.bmp
+tradedepot_filterbtn_mo.bmp
+tradedepot_promptbtn.bmp
+tradedepot_promptbtn_mo.bmp
+from_dat/tradedepot_quantity_prompt.bmp
+tradedepot_spindownbtn.bmp
+tradedepot_spindownbtn_mo.bmp
+tradedepot_spinupbtn.bmp
+tradedepot_spinupbtn_mo.bmp
+?GrabberInfo

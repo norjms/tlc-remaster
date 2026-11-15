@@ -1,0 +1,10 @@
+# images for code that indexes this group, in object order (formerly cantina.dat)
+from_dat/cantina_background.bmp
+cantina_Btn.bmp
+cantina_Btn_dis.bmp
+cantina_Btn_hov.bmp
+cantina_exit_btn_norm.bmp
+cantina_exit_btn_over.bmp
+from_dat/militaryops_background.bmp
+from_dat/researchlab_background.bmp
+?GrabberInfo

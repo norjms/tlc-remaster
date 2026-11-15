@@ -1,0 +1,18 @@
+# images for code that indexes this group, in object order (formerly bank.dat)
+from_dat/bank_background.bmp
+from_dat/bank_banner.bmp
+bank_button_confirm_hover.bmp
+bank_button_confirm_normal.bmp
+bank_button_exit.bmp
+bank_button_exit_hover.bmp
+bank_button_help.bmp
+bank_button_help_hover.bmp
+bank_button_pay_hover.bmp
+bank_button_pay_normal.bmp
+bank_button_take_hover.bmp
+bank_button_take_normal.bmp
+bank_calc_button_deactivate.bmp
+bank_calc_button_hover.bmp
+bank_calc_button_normal.bmp
+bank_help_window.bmp
+?GrabberInfo

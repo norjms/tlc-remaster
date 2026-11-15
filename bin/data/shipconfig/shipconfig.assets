@@ -1,0 +1,10 @@
+# images for code that indexes this group, in object order (formerly shipconfig.dat)
+freelance.tga
+military.tga
+science.tga
+from_dat/shipconfig.bmp
+shipconfig_btn_deactive.bmp
+shipconfig_btn_norm.bmp
+shipconfig_btn_over.bmp
+shipconfig_cursor0.bmp
+?GrabberInfo

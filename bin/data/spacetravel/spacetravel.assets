@@ -1,0 +1,8 @@
+# images for code that indexes this group, in object order (formerly spacetravel.dat)
+from_dat/gui_aux.bmp
+from_dat/gui_viewer.bmp
+from_dat/ip_tiles.bmp
+is_tiles.bmp
+from_dat/shield.tga
+starfield.bmp
+?GrabberInfo

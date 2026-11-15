@@ -1,0 +1,10 @@
+# images for code that indexes this group, in object order (formerly auxiliary.dat)
+aux_icon_freelance.tga
+aux_icon_military.tga
+aux_icon_science.tga
+from_dat/gui_aux.bmp
+high_res_ship_freelance.tga
+high_res_ship_military.tga
+high_res_ship_science.tga
+is_tiles_small.bmp
+?GrabberInfo

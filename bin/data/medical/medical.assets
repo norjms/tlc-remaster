@@ -1,0 +1,21 @@
+# images for code that indexes this group, in object order (formerly medical.dat)
+btn_dis.bmp
+btn_hov.bmp
+btn_norm.bmp
+from_dat/gui_viewer.bmp
+from_dat/gui_viewer_right.bmp
+med_bar_communication.bmp
+med_bar_durability.bmp
+med_bar_engineer.bmp
+med_bar_health.bmp
+med_bar_learn.bmp
+med_bar_medical.bmp
+med_bar_navigation.bmp
+med_bar_science.bmp
+med_bar_tactical.bmp
+from_dat/med_window_data.bmp
+medical_captBtn.bmp
+medical_captBtn_dis.bmp
+medical_captBtn_hov.bmp
+from_dat/right_viewer_bg.bmp
+?GrabberInfo

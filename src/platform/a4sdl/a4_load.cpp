@@ -340,8 +340,61 @@ void free_objects(DATAFILE *dat)
 
 } /* namespace */
 
+/* The remaster keeps every image as a plain file. A module that asks for
+   "data/x/x.dat" gets the objects listed, in order, in "data/x/x.assets":
+   one path per line relative to that folder, '#' starts a comment, and a
+   line starting with '?' stands for a non-image object (an empty slot that
+   keeps the game's object numbers lined up). Original .dat files are still
+   read when no .assets list exists. */
+static DATAFILE *load_asset_list(const std::string &list_path)
+{
+	std::vector<unsigned char> text;
+	if (!read_file(list_path, text)) return NULL;
+	std::string dir = list_path.substr(0, list_path.find_last_of("/\\") + 1);
+	std::vector<std::string> entries;
+	std::string line;
+	for (size_t i = 0; i <= text.size(); i++) {
+		char c = i < text.size() ? (char)text[i] : '\n';
+		if (c == '\r') continue;
+		if (c != '\n') { line += c; continue; }
+		size_t b = line.find_first_not_of(" \t"), e = line.find_last_not_of(" \t");
+		std::string t = b == std::string::npos ? "" : line.substr(b, e - b + 1);
+		if (!t.empty() && t[0] != '#') entries.push_back(t);
+		line.clear();
+	}
+	DATAFILE *dat = (DATAFILE *)calloc(entries.size() + 1, sizeof(DATAFILE));
+	if (!dat) return NULL;
+	for (size_t i = 0; i < entries.size(); i++) {
+		if (entries[i][0] == '?') {
+			dat[i].type = DAT_ID('i', 'n', 'f', 'o');
+			dat[i].dat = NULL;
+			continue;
+		}
+		BITMAP *b = load_bitmap((dir + entries[i]).c_str(), NULL);
+		if (!b) {
+			fprintf(stderr, "a4sdl: %s: cannot load %s\n", list_path.c_str(), entries[i].c_str());
+			dat[i].type = DAT_END;
+			free_objects(dat);
+			return NULL;
+		}
+		dat[i].type = DAT_BITMAP;
+		dat[i].dat = b;
+		dat[i].size = (long)b->w * b->h * 4;
+	}
+	dat[entries.size()].type = DAT_END;
+	return dat;
+}
+
 DATAFILE *load_datafile(const char *filename)
 {
+	std::string fn = filename;
+	if (fn.size() > 4 && (fn.compare(fn.size() - 4, 4, ".dat") == 0 || fn.compare(fn.size() - 4, 4, ".DAT") == 0)) {
+		std::string list = a4::resolve_path((fn.substr(0, fn.size() - 4) + ".assets").c_str());
+		std::error_code ec;
+		if (std::filesystem::exists(std::filesystem::u8path(list), ec))
+			return load_asset_list(list);
+	}
+
 	std::vector<unsigned char> file;
 	if (!read_file(a4::resolve_path(filename), file) || file.size() < 8) return NULL;
 

@@ -1,0 +1,21 @@
+# images for code that indexes this group, in object order (formerly captainslounge.dat)
+from_dat/captainslounge_background.bmp
+captainslounge_del_disabled.tga
+captainslounge_del_mouseover.tga
+captainslounge_del.tga
+from_dat/captainslounge_modalprompt_background.bmp
+captainslounge_no.bmp
+captainslounge_no_mouseover.bmp
+captainslounge_plus_disabled.tga
+captainslounge_plus_mouseover.tga
+captainslounge_plus.tga
+from_dat/captainslounge_save.bmp
+from_dat/captainslounge_save_mouseover.bmp
+from_dat/captainslounge_sel_disabled.tga
+from_dat/captainslounge_sel_mouseover.tga
+from_dat/captainslounge_sel.tga
+captainslounge_yes.bmp
+captainslounge_yes_mouseover.bmp
+from_dat/generic_exit_btn_norm.bmp
+from_dat/generic_exit_btn_over.bmp
+?GrabberInfo
