@@ -1170,7 +1170,7 @@ void Game::RunGame()
 		else {
 			//load the custom mouse cursor
 			cursor = new Sprite();
-			if (!cursor->load("data/gui/cursor.tga")) 
+			if (!cursor->load("data/gui/cursor.png")) 
             {
 				g_game->message("Error loading mouse cursor");
 				g_game->shutdown();

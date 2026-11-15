@@ -1,3 +1,4 @@
+#include <string>
 #include "env.h"
 #include "Game.h"
 #include "Events.h"
@@ -611,8 +612,33 @@ void ScrollBox::ScrollBox::Write(ColoredString text)
 	sbRedraw = true;
 }
 
+/* remastered scroll bar art (data/gui/scroll_*.png); the old box drawing
+   below is the fallback when the art is missing */
+enum { SB_TRACK, SB_THUMB, SB_THUMB_OVER, SB_UP, SB_UP_OVER, SB_DOWN, SB_DOWN_OVER, SB_ART_COUNT };
+static BITMAP *sbArt[SB_ART_COUNT];
+static bool sbArtTried = false;
+static bool sbArtReady()
+{
+	if (!sbArtTried) {
+		static const char *names[SB_ART_COUNT] = { "track", "thumb", "thumb_over", "up", "up_over", "down", "down_over" };
+		sbArtTried = true;
+		for (int i = 0; i < SB_ART_COUNT; i++) {
+			std::string f = std::string("data/gui/scroll_") + names[i] + ".png";
+			sbArt[i] = load_bitmap(f.c_str(), NULL);
+		}
+	}
+	for (int i = 0; i < SB_ART_COUNT; i++) if (!sbArt[i]) return false;
+	return true;
+}
+
 void ScrollBox::ScrollBox::drawDownArrow(BITMAP *buffer)
 {
+	if (sbArtReady()) {
+		BITMAP *b = sbArt[(sbIsOverDown && !sbDragging) ? SB_DOWN_OVER : SB_DOWN];
+		masked_stretch_blit(b, buffer, 0, 0, b->w, b->h, getLinkedX() + sbDownRect.left, getLinkedY() + sbDownRect.top,
+			sbDownRect.right - sbDownRect.left + 1, sbDownRect.bottom - sbDownRect.top + 1);
+		return;
+	}
 	int highlightColor;
 	if (sbIsOverDown && !sbDragging)
 		highlightColor = ColorHover;
@@ -634,6 +660,12 @@ void ScrollBox::ScrollBox::drawDownArrow(BITMAP *buffer)
 
 void ScrollBox::ScrollBox::drawScrollBar(BITMAP *buffer)
 {
+	if (sbArtReady()) {
+		BITMAP *b = sbArt[(sbIsOverBar || sbDragging) ? SB_THUMB_OVER : SB_THUMB];
+		masked_stretch_blit(b, buffer, 0, 0, b->w, b->h, getLinkedX() + sbScrollRect.left, getLinkedY() + sbScrollRect.top,
+			sbScrollRect.right - sbScrollRect.left + 1, sbScrollRect.bottom - sbScrollRect.top + 1);
+		return;
+	}
 	int highlightColor;
 	if (sbIsOverBar || sbDragging)
 		highlightColor = ColorHover;
@@ -656,6 +688,12 @@ void ScrollBox::ScrollBox::drawScrollBar(BITMAP *buffer)
 
 void ScrollBox::ScrollBox::drawTrack(BITMAP *buffer)
 {
+	if (sbArtReady()) {
+		BITMAP *b = sbArt[SB_TRACK];
+		masked_stretch_blit(b, buffer, 0, 0, b->w, b->h, getLinkedX() + sbTrackRect.left, getLinkedY() + sbTrackRect.top,
+			sbTrackRect.right - sbTrackRect.left + 1, sbTrackRect.bottom - sbTrackRect.top + 1);
+		return;
+	}
 	int half = (sbTrackRect.right - sbTrackRect.left)/2;
 	rect(buffer, getLinkedX() + sbTrackRect.left, getLinkedY() + sbTrackRect.top, getLinkedX() + sbTrackRect.right, getLinkedY() + sbTrackRect.bottom, ColorControls);
 	rectfill(buffer, getLinkedX() + sbTrackRect.left + 1, getLinkedY() + sbTrackRect.top + 1, getLinkedX() + sbTrackRect.right - 1, getLinkedY() + sbTrackRect.bottom - 1, ColorBackground);
@@ -665,6 +703,12 @@ void ScrollBox::ScrollBox::drawTrack(BITMAP *buffer)
 
 void ScrollBox::ScrollBox::drawUpArrow(BITMAP *buffer)
 {
+	if (sbArtReady()) {
+		BITMAP *b = sbArt[(sbIsOverUp && !sbDragging) ? SB_UP_OVER : SB_UP];
+		masked_stretch_blit(b, buffer, 0, 0, b->w, b->h, getLinkedX() + sbUpRect.left, getLinkedY() + sbUpRect.top,
+			sbUpRect.right - sbUpRect.left + 1, sbUpRect.bottom - sbUpRect.top + 1);
+		return;
+	}
 	int highlightColor;
 	if (sbIsOverUp && !sbDragging)
 		highlightColor = ColorHover;
