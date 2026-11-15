@@ -380,7 +380,7 @@ void triangle(BITMAP *b, int x1, int y1, int x2, int y2, int x3, int y3, int col
 
 namespace {
 
-enum Mode { COPY, MASK, TRANS };
+enum Mode { COPY, MASK, TRANS, ALPHA };
 
 bool g_alpha_blender = false;
 int  g_trans_alpha = 255;
@@ -393,6 +393,8 @@ void transfer(BITMAP *s, BITMAP *d, int sx, int sy, int sw_, int sh_,
               int dx, int dy, int dw, int dh, Mode mode, bool hflip = false, bool vflip = false)
 {
 	if (!s || !d || dw <= 0 || dh <= 0 || sw_ <= 0 || sh_ <= 0) return;
+	/* remaster art saved as PNG with alpha blends wherever the game masks */
+	if (mode == MASK && s->alpha_sprite) mode = ALPHA;
 	const int as = s->scale, ds = d->scale;
 	int X0 = MAX(dx, d->cl) * ds, X1 = MIN(dx + dw, d->cr) * ds;
 	int Y0 = MAX(dy, d->ct) * ds, Y1 = MIN(dy + dh, d->cb) * ds;
@@ -456,6 +458,20 @@ void transfer(BITMAP *s, BITMAP *d, int sx, int sy, int sw_, int sh_,
 				/* average the box; for masked transfers only the opaque part,
 				   and leave the pixel alone when the box is mostly mask */
 				unsigned r = 0, g = 0, bl = 0, al = 0, n = 0, tot = (unsigned)(box * box);
+				if (mode == ALPHA) {
+					/* alpha weighted average over the whole box */
+					for (int j = 0; j < box; j++) {
+						const uint32_t *q = sp + (size_t)j * src_pitch + SX;
+						for (int i = 0; i < box; i++) {
+							uint32_t p = q[i], a = p >> 24;
+							r += ((p >> 16) & 255) * a; g += ((p >> 8) & 255) * a; bl += (p & 255) * a; al += a;
+						}
+					}
+					if (al == 0) continue;
+					c = ((al / tot) << 24) | ((r / al) << 16) | ((g / al) << 8) | (bl / al);
+					dp[X] = a4::blend(c, dp[X], c >> 24);
+					continue;
+				}
 				for (int j = 0; j < box; j++) {
 					const uint32_t *q = sp + (size_t)j * src_pitch + SX;
 					for (int i = 0; i < box; i++) {
@@ -469,7 +485,9 @@ void transfer(BITMAP *s, BITMAP *d, int sx, int sy, int sw_, int sh_,
 				c = ((al / n) << 24) | ((r / n) << 16) | ((g / n) << 8) | (bl / n);
 				if (is_mask(c)) c ^= 0x00010000u;   /* never produce the mask colour by averaging */
 			}
-			if (mode == TRANS) {
+			if (mode == ALPHA) {
+				dp[X] = a4::blend(c, dp[X], c >> 24);
+			} else if (mode == TRANS) {
 				unsigned a = g_alpha_blender ? (c >> 24) : (unsigned)g_trans_alpha;
 				dp[X] = a4::blend(c, dp[X], a);
 			} else {
@@ -500,6 +518,10 @@ static bool clip_blit(BITMAP *s, BITMAP *d, int &sx, int &sy, int &dx, int &dy, 
 void blit(BITMAP *s, BITMAP *d, int sx, int sy, int dx, int dy, int w, int h)
 {
 	if (!s || !d || !clip_blit(s, d, sx, sy, dx, dy, w, h)) return;
+	/* a whole-bitmap copy of an alpha sprite is an alpha sprite too
+	   (the game builds button images by copying one and drawing on it) */
+	if (!d->is_screen && !d->parent && dx == 0 && dy == 0 && w == d->w && h == d->h)
+		d->alpha_sprite = s->alpha_sprite;
 	transfer(s, d, sx, sy, w, h, dx, dy, w, h, COPY);
 }
 

@@ -75,7 +75,7 @@ bool ModuleShipConfig::Init()
 		if(i < NUMBER_OF_BUTTONS)
 		{
 			buttons[i] = new Button(btnNorm, btnOver, btnDeact, 
-				BUTTON_X_START, BUTTON_Y_START+i*(BUTTON_HEIGHT+PIXEL_BUFFER), 0, 0, g_game->font32, "def", makecol(0,255,0));
+				BUTTON_X_START, BUTTON_Y_START+i*(BUTTON_HEIGHT+PIXEL_BUFFER), 0, 0, g_game->font32, "def", UI_TEXT);
 		}
 		if(buttons[i])
 		{

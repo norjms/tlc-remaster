@@ -3,8 +3,8 @@ freelance.tga
 military.tga
 science.tga
 from_dat/shipconfig.bmp
-shipconfig_btn_deactive.bmp
-shipconfig_btn_norm.bmp
-shipconfig_btn_over.bmp
+shipconfig_btn_deactive.png
+shipconfig_btn_norm.png
+shipconfig_btn_over.png
 shipconfig_cursor0.bmp
 ?GrabberInfo

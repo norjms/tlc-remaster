@@ -81,6 +81,7 @@ typedef struct BITMAP
    int owns_pixels;        /* false for sub-bitmaps */
    struct BITMAP *parent;  /* for sub-bitmaps, the bitmap that owns the pixels */
    int is_screen;          /* drawing to it marks the display dirty */
+   int alpha_sprite;       /* PNG with alpha: draw_sprite/masked_blit blend it (remaster art) */
 } BITMAP;
 
 typedef struct RGB { unsigned char r, g, b, filler; } RGB;

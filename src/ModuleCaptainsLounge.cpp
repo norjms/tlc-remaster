@@ -142,13 +142,13 @@ bool ModuleCaptainsLounge::Init()
 	
     //create exit button
     m_backBtn = new Button(btnNorm, btnOver,NULL,
-		BACKBTN_X,BACKBTN_Y,EVENT_NONE,EVENT_BACK_CLICK, g_game->font32, "Exit", BLACK);
+		BACKBTN_X,BACKBTN_Y,EVENT_NONE,EVENT_BACK_CLICK, g_game->font32, "Exit", UI_TEXT);
 	if (m_backBtn == NULL) return false;
 	if (!m_backBtn->IsInitialized()) return false;
 
     //create launch button
     m_launchBtn = new Button(btnNorm, btnOver, NULL,
-        BACKBTN_X+180, BACKBTN_Y,EVENT_NONE,EVENT_LAUNCH_CLICK, g_game->font32, "Launch", BLACK);
+        BACKBTN_X+180, BACKBTN_Y,EVENT_NONE,EVENT_LAUNCH_CLICK, g_game->font32, "Launch", UI_TEXT);
     if (m_launchBtn == NULL) return false;
     if (!m_launchBtn->IsInitialized()) return false;
 
@@ -174,9 +174,9 @@ bool ModuleCaptainsLounge::Init()
 		//btnNorm = (BITMAP*)cldata[CAPTAINSLOUNGE_SEL_TGA].dat;
 		//btnOver = (BITMAP*)cldata[CAPTAINSLOUNGE_SEL_MOUSEOVER_TGA].dat;
 		//btnDis = (BITMAP*)cldata[CAPTAINSLOUNGE_SEL_DISABLED_TGA].dat;
-        img_cl_sel = (BITMAP*)load_bitmap("data/captainslounge/captainslounge_sel.tga",NULL);
-        img_cl_sel_dis = (BITMAP*)load_bitmap("data/captainslounge/captainslounge_sel_disabled.tga",NULL);
-        img_cl_sel_mo = (BITMAP*)load_bitmap("data/captainslounge/captainslounge_sel_mouseover.tga",NULL);
+        img_cl_sel = (BITMAP*)load_bitmap("data/captainslounge/from_dat/captainslounge_sel.png",NULL);
+        img_cl_sel_dis = (BITMAP*)load_bitmap("data/captainslounge/from_dat/captainslounge_sel_disabled.png",NULL);
+        img_cl_sel_mo = (BITMAP*)load_bitmap("data/captainslounge/from_dat/captainslounge_sel_mouseover.png",NULL);
 
         if (!img_cl_sel || !img_cl_sel_dis || !img_cl_sel_mo) 
         {
@@ -191,8 +191,8 @@ bool ModuleCaptainsLounge::Init()
 
 		//btnNorm = (BITMAP*)cldata[CAPTAINSLOUNGE_SAVE_BMP].dat;
 		//btnOver = (BITMAP*)cldata[CAPTAINSLOUNGE_SAVE_MOUSEOVER_BMP].dat;
-        img_cl_save = (BITMAP*)load_bitmap("data/captainslounge/captainslounge_save.bmp",NULL);
-        img_cl_save_mo = (BITMAP*)load_bitmap("data/captainslounge/captainslounge_save_mouseover.bmp",NULL);
+        img_cl_save = (BITMAP*)load_bitmap("data/captainslounge/from_dat/captainslounge_save.png",NULL);
+        img_cl_save_mo = (BITMAP*)load_bitmap("data/captainslounge/from_dat/captainslounge_save_mouseover.png",NULL);
         if (!img_cl_save || !img_cl_save_mo)
         {
             debug << "captainslounge: error loading save button images" << endl;
@@ -601,7 +601,7 @@ void ModuleCaptainsLounge::Draw()
 
 	if (m_modalPromptActive)
 	{
-		blit(m_modalPromptBackground,g_game->GetBackBuffer(),0,0,MODALPROMPT_BG_X,MODALPROMPT_BG_Y,m_modalPromptBackground->w,m_modalPromptBackground->h);
+		draw_sprite(g_game->GetBackBuffer(),m_modalPromptBackground,MODALPROMPT_BG_X,MODALPROMPT_BG_Y);
 
 		int y = MODALPROMPT_START_Y;
 		for (vector<string>::iterator i = m_modalPromptStrings.begin(); i != m_modalPromptStrings.end(); ++i)

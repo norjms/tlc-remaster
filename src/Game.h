@@ -32,6 +32,7 @@
 
 //COMMON RGB COLORS
 #define BLACK			makecol(0,0,0)
+#define UI_TEXT			makecol(238,244,255)	/* label colour on the glass buttons */
 #define GRAY1			makecol(232,232,232)
 #define DGRAY           makecol(120,120,120)
 #define WHITE			makecol(255,255,255)

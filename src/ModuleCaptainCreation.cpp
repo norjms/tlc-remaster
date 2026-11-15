@@ -307,8 +307,8 @@ bool ModuleCaptainCreation::Init()
 
 
 	btnNorm = (BITMAP*)ccdata[MINUS_BMP].dat;
-	btnOver = (BITMAP*)ccdata[MINUS_DISABLED_BMP].dat;
-	btnDis = (BITMAP*)ccdata[MINUS_MOUSEOVER_BMP].dat;
+	btnOver = (BITMAP*)ccdata[MINUS_MOUSEOVER_BMP].dat;
+	btnDis = (BITMAP*)ccdata[MINUS_DISABLED_BMP].dat;
 	m_minusBtns[0] = new Button(btnNorm, btnOver, btnDis,
 							 PLUS_DURABILITY_X + 42, PLUS_DURABILITY_Y, EVENT_NONE, EVENT_MINUS + 0,"");
 	m_minusBtns[1] = new Button(btnNorm, btnOver, btnDis,
@@ -376,10 +376,10 @@ void ModuleCaptainCreation::Draw()
 	case WP_PROFESSION_CHOICE:
 		{
 			blit(m_professionChoiceBackground,g_game->GetBackBuffer(),0,0,0,0,screen->w,screen->h);
-			blit(m_scientificBtn,g_game->GetBackBuffer(),0,0,PROFBTN_SCIENTIFIC_X,PROFBTN_SCIENTIFIC_Y,PROFBTN_WIDTH,PROFBTN_HEIGHT);
-			blit(m_freelanceBtn,g_game->GetBackBuffer(),0,0,PROFBTN_FREELANCE_X,PROFBTN_FREELANCE_Y,PROFBTN_WIDTH,PROFBTN_HEIGHT);
-			blit(m_militaryBtn,g_game->GetBackBuffer(),0,0,PROFBTN_MILITARY_X,PROFBTN_MILITARY_Y,PROFBTN_WIDTH,PROFBTN_HEIGHT);
-			blit(m_backBtn,g_game->GetBackBuffer(),0,0,BACKBTN_X,BACKBTN_Y,BACKBTN_WIDTH,BACKBTN_HEIGHT);
+			draw_sprite(g_game->GetBackBuffer(),m_scientificBtn,PROFBTN_SCIENTIFIC_X,PROFBTN_SCIENTIFIC_Y);
+			draw_sprite(g_game->GetBackBuffer(),m_freelanceBtn,PROFBTN_FREELANCE_X,PROFBTN_FREELANCE_Y);
+			draw_sprite(g_game->GetBackBuffer(),m_militaryBtn,PROFBTN_MILITARY_X,PROFBTN_MILITARY_Y);
+			draw_sprite(g_game->GetBackBuffer(),m_backBtn,BACKBTN_X,BACKBTN_Y);
 
 			if (m_profInfoBox != NULL)
 			{
@@ -388,7 +388,7 @@ void ModuleCaptainCreation::Draw()
 
 			if (m_mouseOverImg != NULL)
 			{
-				blit(m_mouseOverImg,g_game->GetBackBuffer(),0,0,m_mouseOverImgX,m_mouseOverImgY,m_mouseOverImg->w,m_mouseOverImg->h);
+				draw_sprite(g_game->GetBackBuffer(),m_mouseOverImg,m_mouseOverImgX,m_mouseOverImgY);
 			}
 
 			//display tutorial help messages for beginners
@@ -407,7 +407,7 @@ void ModuleCaptainCreation::Draw()
 		{
 			blit(m_detailsBackground,g_game->GetBackBuffer(),0,0,0,0,g_game->GetBackBuffer()->w,g_game->GetBackBuffer()->h);
 
-			blit(m_backBtn,g_game->GetBackBuffer(),0,0,BACKBTN_X,BACKBTN_Y,BACKBTN_WIDTH,BACKBTN_HEIGHT);
+			draw_sprite(g_game->GetBackBuffer(),m_backBtn,BACKBTN_X,BACKBTN_Y);
 
 			alfont_set_font_size(g_game->font10, TEXTHEIGHT_TITLES);
 			alfont_textout_centre(g_game->GetBackBuffer(),g_game->font10,"Captain Details",g_game->GetBackBuffer()->w/2,30,TEXTCOL);
@@ -418,7 +418,7 @@ void ModuleCaptainCreation::Draw()
 			alfont_textprintf(g_game->GetBackBuffer(),g_game->font10,NAME_X,NAME_Y,TEXTCOL,n);
 
 			int nlen = alfont_text_length(g_game->font10,n);
-			blit(m_cursor[m_cursorIdx],g_game->GetBackBuffer(),0,0,NAME_X+nlen+2,CURSOR_Y,m_cursor[m_cursorIdx]->w,m_cursor[m_cursorIdx]->h);
+			draw_sprite(g_game->GetBackBuffer(),m_cursor[m_cursorIdx],NAME_X+nlen+2,CURSOR_Y);
 
 			if (++m_cursorIdxDelay > CURSOR_DELAY)
 			{
@@ -460,16 +460,16 @@ void ModuleCaptainCreation::Draw()
 			alfont_textprintf(g_game->GetBackBuffer(),g_game->font10,ATTS_MAX_COMMON_X,COMMUNICATION_Y,TEXTCOL," (%d max)",m_attributesMax.communication);
 			alfont_textprintf(g_game->GetBackBuffer(),g_game->font10,ATTS_MAX_COMMON_X,MEDICAL_Y,TEXTCOL," (%d max)",m_attributesMax.medical);
 
-			blit(m_plusBtn,g_game->GetBackBuffer(),0,0,PLUS_DURABILITY_X,PLUS_DURABILITY_Y,m_plusBtn->w,m_plusBtn->h);
-			blit(m_plusBtn,g_game->GetBackBuffer(),0,0,PLUS_LEARNRATE_X,PLUS_LEARNRATE_Y,m_plusBtn->w,m_plusBtn->h);
-			blit(m_plusBtn,g_game->GetBackBuffer(),0,0,PLUS_SCIENCE_X,PLUS_SCIENCE_Y,m_plusBtn->w,m_plusBtn->h);
-			blit(m_plusBtn,g_game->GetBackBuffer(),0,0,PLUS_NAVIGATION_X,PLUS_NAVIGATION_Y,m_plusBtn->w,m_plusBtn->h);
-			blit(m_plusBtn,g_game->GetBackBuffer(),0,0,PLUS_TACTICS_X,PLUS_TACTICS_Y,m_plusBtn->w,m_plusBtn->h);
-			blit(m_plusBtn,g_game->GetBackBuffer(),0,0,PLUS_ENGINEERING_X,PLUS_ENGINEERING_Y,m_plusBtn->w,m_plusBtn->h);
-			blit(m_plusBtn,g_game->GetBackBuffer(),0,0,PLUS_COMMUNICATION_X,PLUS_COMMUNICATION_Y,m_plusBtn->w,m_plusBtn->h);
-			blit(m_plusBtn,g_game->GetBackBuffer(),0,0,PLUS_MEDICAL_X,PLUS_MEDICAL_Y,m_plusBtn->w,m_plusBtn->h);
+			draw_sprite(g_game->GetBackBuffer(),m_plusBtn,PLUS_DURABILITY_X,PLUS_DURABILITY_Y);
+			draw_sprite(g_game->GetBackBuffer(),m_plusBtn,PLUS_LEARNRATE_X,PLUS_LEARNRATE_Y);
+			draw_sprite(g_game->GetBackBuffer(),m_plusBtn,PLUS_SCIENCE_X,PLUS_SCIENCE_Y);
+			draw_sprite(g_game->GetBackBuffer(),m_plusBtn,PLUS_NAVIGATION_X,PLUS_NAVIGATION_Y);
+			draw_sprite(g_game->GetBackBuffer(),m_plusBtn,PLUS_TACTICS_X,PLUS_TACTICS_Y);
+			draw_sprite(g_game->GetBackBuffer(),m_plusBtn,PLUS_ENGINEERING_X,PLUS_ENGINEERING_Y);
+			draw_sprite(g_game->GetBackBuffer(),m_plusBtn,PLUS_COMMUNICATION_X,PLUS_COMMUNICATION_Y);
+			draw_sprite(g_game->GetBackBuffer(),m_plusBtn,PLUS_MEDICAL_X,PLUS_MEDICAL_Y);
 
-			blit(m_resetBtn,g_game->GetBackBuffer(),0,0,RESET_X,RESET_Y,m_resetBtn->w,m_resetBtn->h);
+			draw_sprite(g_game->GetBackBuffer(),m_resetBtn,RESET_X,RESET_Y);
 
 			if ((m_availPts == 0) &&
 				(m_availProfPts == 0) &&
@@ -486,7 +486,7 @@ void ModuleCaptainCreation::Draw()
 
 			if (m_mouseOverImg != NULL)
 			{
-			blit(m_mouseOverImg,g_game->GetBackBuffer(),0,0,m_mouseOverImgX,m_mouseOverImgY,m_mouseOverImg->w,m_mouseOverImg->h);
+			draw_sprite(g_game->GetBackBuffer(),m_mouseOverImg,m_mouseOverImgX,m_mouseOverImgY);
 			}
 			for(int i=0; i<8; i++){
 				m_minusBtns[i]->Run(g_game->GetBackBuffer());

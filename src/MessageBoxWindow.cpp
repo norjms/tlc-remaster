@@ -32,14 +32,14 @@ MessageBoxWindow::MessageBoxWindow(
 		bg = load_bitmap("data/gui/trans_bg.tga", NULL);
 	
 	if (bar == NULL)
-		bar = load_bitmap("data/gui/messagebox_bar.bmp", NULL);
+		bar = load_bitmap("data/gui/messagebox_bar.png", NULL);
 
 	if (button1 == NULL)
 	{
 		button1 = new Button(
-			"data/gui/generic_exit_btn_norm.bmp", 
-			"data/gui/generic_exit_btn_over.bmp", 
-			"data/gui/generic_exit_btn_over.bmp", 
+			"data/gui/generic_exit_btn_norm.png", 
+			"data/gui/generic_exit_btn_over.png", 
+			"data/gui/generic_exit_btn_over.png", 
 			x, y,
 			0xDEADBEEF,0xDEADBEEF + 1,
 			g_game->font24,

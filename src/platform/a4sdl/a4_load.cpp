@@ -205,7 +205,14 @@ BITMAP *load_bitmap(const char *filename, RGB *pal)
 
 	/* Allegro keeps alpha only for images that have it */
 	bool has_alpha = (comp == 2 || comp == 4);
-	if (BITMAP *hd = load_tier(path, w, h, has_alpha)) { stbi_image_free(px); return hd; }
+	/* the original game has no PNGs, so a PNG with alpha is remaster art
+	   meant to blend even where the game draws it as a masked sprite */
+	bool png = path.size() > 4 && (path.compare(path.size() - 4, 4, ".png") == 0 || path.compare(path.size() - 4, 4, ".PNG") == 0);
+	if (BITMAP *hd = load_tier(path, w, h, has_alpha)) {
+		stbi_image_free(px);
+		hd->alpha_sprite = png && has_alpha;
+		return hd;
+	}
 
 	BITMAP *b = a4::create_bitmap_scaled(w, h, 1);
 	if (!b) { stbi_image_free(px); return NULL; }
@@ -218,6 +225,7 @@ BITMAP *load_bitmap(const char *filename, RGB *pal)
 		}
 	}
 	stbi_image_free(px);
+	b->alpha_sprite = png && has_alpha;
 	return b;
 }
 

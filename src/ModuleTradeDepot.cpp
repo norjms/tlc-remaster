@@ -96,7 +96,7 @@ using namespace std;
 #define BTNEVENT_EXIT 302
 #define BTNEVENT_CHECKOUT 303
 #define BTNEVENT_CLEAR 304
-#define BTNTEXTCOLOR BLACK
+#define BTNTEXTCOLOR UI_TEXT
 #define BTN_TEXTHEIGHT 30
 
 #define FILTERBTN_Y                719
@@ -134,7 +134,7 @@ using namespace std;
 #define BTNEVENT_ALL         503
 #define BTNEVENT_OK          504
 #define BTNEVENT_CANCEL      505
-#define PROMPTBTN_TEXT_COLOR BLACK
+#define PROMPTBTN_TEXT_COLOR UI_TEXT
 #define PROMPT_TEXT_COLOR	 ORANGE
 
 
@@ -317,7 +317,7 @@ bool ModuleTradeDepot::Init()
 		g_game->message("TradeDepot: Trade depot images are missing");
 		return false;
 	}
-   m_exitBtn = new Button(imgNormal,imgMO,NULL,EXITBTN_X, EXITBTN_Y, 0, BTNEVENT_EXIT, g_game->font24, "Exit", BLACK);
+   m_exitBtn = new Button(imgNormal,imgMO,NULL,EXITBTN_X, EXITBTN_Y, 0, BTNEVENT_EXIT, g_game->font24, "Exit", UI_TEXT);
    if (m_exitBtn == NULL)
       return false;
    if (!m_exitBtn->IsInitialized())
@@ -619,12 +619,12 @@ void ModuleTradeDepot::Draw()
 
    if (m_tradeMode == TM_PROMPTING)
    {
-      blit(m_promptBackground,canvas,0,0,PROMPTBG_X,PROMPTBG_Y,m_promptBackground->w,m_promptBackground->h);
+      draw_sprite(canvas,m_promptBackground,PROMPTBG_X,PROMPTBG_Y);
       alfont_set_font_size(g_game->font10,PROMPT_VAL_TEXTHEIGHT);
       alfont_textout(canvas,g_game->font10,m_promptText.c_str(),QTYTEXT_X+PROMPTBG_X,QTYTEXT_Y+PROMPTBG_Y,PROMPT_TEXT_COLOR);
 
 		int nlen = alfont_text_length(g_game->font10,m_promptText.c_str());
-      blit(m_cursor[m_cursorIdx],canvas,0,0,QTYTEXT_X+PROMPTBG_X+nlen+2,CURSOR_Y+PROMPTBG_Y,m_cursor[m_cursorIdx]->w,m_cursor[m_cursorIdx]->h);
+      draw_sprite(canvas,m_cursor[m_cursorIdx],QTYTEXT_X+PROMPTBG_X+nlen+2,CURSOR_Y+PROMPTBG_Y);
 
 		if (++m_cursorIdxDelay > CURSOR_DELAY)
 		{

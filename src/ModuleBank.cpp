@@ -275,7 +275,7 @@ bool ModuleBank::init_buttons(){
 					imgNorm, 
 					imgOver, 
 					imgDis, 
-		/*345, 572,*/CALC_ZERO_X, CALC_ZERO_Y, 0, CALC_ZERO, g_game->font10, "0", makecol(0,255,0), "click");
+		/*345, 572,*/CALC_ZERO_X, CALC_ZERO_Y, 0, CALC_ZERO, g_game->font10, "0", UI_TEXT, "click");
 
 	calc_buttons[1] = new Button(
 					imgNorm, 
@@ -283,7 +283,7 @@ bool ModuleBank::init_buttons(){
 					imgDis, 
 		/*345, 500,*/CALC_ZERO_X, 
 					 CALC_ZERO_Y - CALC_PADDING_Y, 
-					 0, CALC_ONE, g_game->font10, "1", makecol(0,255,0), "click");
+					 0, CALC_ONE, g_game->font10, "1", UI_TEXT, "click");
 
 	calc_buttons[2] = new Button(
 					imgNorm, 
@@ -291,7 +291,7 @@ bool ModuleBank::init_buttons(){
 					imgDis, 
 		/*427, 500,*/CALC_ZERO_X + ( CALC_PADDING_X ), 
 					 CALC_ZERO_Y - ( CALC_PADDING_Y ), 
-					 0, CALC_TWO, g_game->font10, "2", makecol(0,255,0), "click");
+					 0, CALC_TWO, g_game->font10, "2", UI_TEXT, "click");
 
 	calc_buttons[3] = new Button(
 					imgNorm, 
@@ -299,7 +299,7 @@ bool ModuleBank::init_buttons(){
 					imgDis, 
 		/*509, 500,*/CALC_ZERO_X + ( CALC_PADDING_X ) * 2, 
 					 CALC_ZERO_Y - ( CALC_PADDING_Y ), 
-					 0, CALC_THREE, g_game->font10, "3", makecol(0,255,0), "click");
+					 0, CALC_THREE, g_game->font10, "3", UI_TEXT, "click");
 
 	calc_buttons[4] = new Button(
 					imgNorm, 
@@ -307,7 +307,7 @@ bool ModuleBank::init_buttons(){
 					imgDis, 
 		/*345, 428,*/CALC_ZERO_X, 
 					 CALC_ZERO_Y - ( CALC_PADDING_Y ) * 2, 
-					 0, CALC_FOUR, g_game->font10, "4", makecol(0,255,0), "click");
+					 0, CALC_FOUR, g_game->font10, "4", UI_TEXT, "click");
 
 	calc_buttons[5] = new Button(
 					imgNorm, 
@@ -315,7 +315,7 @@ bool ModuleBank::init_buttons(){
 					imgDis, 
 		/*427, 428,*/CALC_ZERO_X + ( CALC_PADDING_X ), 
 					 CALC_ZERO_Y - ( CALC_PADDING_Y ) * 2, 
-					 0, CALC_FIVE, g_game->font10, "5", makecol(0,255,0), "click");
+					 0, CALC_FIVE, g_game->font10, "5", UI_TEXT, "click");
 
 	calc_buttons[6] = new Button(
 					imgNorm, 
@@ -323,14 +323,14 @@ bool ModuleBank::init_buttons(){
 					imgDis, 
 		/*509, 428,*/CALC_ZERO_X + ( CALC_PADDING_X ) * 2, 
 					 CALC_ZERO_Y - ( CALC_PADDING_Y ) * 2, 
-					 0, CALC_SIX, g_game->font10, "6", makecol(0,255,0), "click");
+					 0, CALC_SIX, g_game->font10, "6", UI_TEXT, "click");
 
 	calc_buttons[7] = new Button(
 					imgNorm, 
 					imgOver, 
 					imgDis, 
 		/*345, 356,*/CALC_ZERO_X, 
-					 CALC_ZERO_Y - ( CALC_PADDING_Y ) * 3,  0, CALC_SEVEN, g_game->font10, "7", makecol(0,255,0), "click");
+					 CALC_ZERO_Y - ( CALC_PADDING_Y ) * 3,  0, CALC_SEVEN, g_game->font10, "7", UI_TEXT, "click");
 
 	calc_buttons[8] = new Button(
 					imgNorm, 
@@ -338,7 +338,7 @@ bool ModuleBank::init_buttons(){
 					imgDis, 
 		/*427, 356,*/CALC_ZERO_X + ( CALC_PADDING_X ), 
 					 CALC_ZERO_Y - ( CALC_PADDING_Y ) * 3, 
-					 0, CALC_EIGHT, g_game->font10, "8", makecol(0,255,0), "click");
+					 0, CALC_EIGHT, g_game->font10, "8", UI_TEXT, "click");
 
 	calc_buttons[9] = new Button(
 					imgNorm, 
@@ -346,7 +346,7 @@ bool ModuleBank::init_buttons(){
 					imgDis, 
 		/*509, 356,*/CALC_ZERO_X + ( CALC_PADDING_X ) * 2, 
 					 CALC_ZERO_Y - ( CALC_PADDING_Y ) * 3, 
-					 0, CALC_NINE, g_game->font10, "9", makecol(0,255,0), "click");
+					 0, CALC_NINE, g_game->font10, "9", UI_TEXT, "click");
 	
 	calc_buttons[10] = new Button(
 					imgNorm, 
@@ -354,7 +354,7 @@ bool ModuleBank::init_buttons(){
 					imgDis, 
 		/*509, 572,*/CALC_ZERO_X + ( CALC_PADDING_X ) * 2, 
 					 CALC_ZERO_Y, 
-					 0, CALC_CLEAR, g_game->font10, "Clear", makecol(0,255,0), "click");
+					 0, CALC_CLEAR, g_game->font10, "Clear", UI_TEXT, "click");
 
 	for(int i = 0; i < NUM_CALC_BUTTONS; i++){
 		if(calc_buttons[i]){

@@ -180,7 +180,7 @@ bool ModuleCantina::Init()
 	btnNorm = (BITMAP*)candata[CANTINA_EXIT_BTN_NORM_BMP].dat;
 	btnOver = (BITMAP*)candata[CANTINA_EXIT_BTN_OVER_BMP].dat;	
 	m_exitBtn = new Button(btnNorm, btnOver, NULL,
-		EXITBTN_X,EXITBTN_Y,EVENT_NONE,EVENT_EXIT_CLICK, g_game->font24, "Exit", BLACK,"click");
+		EXITBTN_X,EXITBTN_Y,EVENT_NONE,EVENT_EXIT_CLICK, g_game->font24, "Exit", UI_TEXT,"click");
 	if (m_exitBtn == NULL) return false;
 	if (!m_exitBtn->IsInitialized()) return false;
 
@@ -192,7 +192,7 @@ bool ModuleCantina::Init()
 	//Create and initialize the TURNIN button for the module
 	m_turninBtn = new Button(btnNorm, btnOver, btnDis, 
 		TURNINBTN_X,TURNINBTN_Y,EVENT_NONE,EVENT_TURNIN_CLICK, 
-		g_game->font24, "SUBMIT", BLACK, "click");
+		g_game->font24, "SUBMIT", UI_TEXT, "click");
 	if (m_turninBtn == NULL) return false;
 	if (!m_turninBtn->IsInitialized()) return false;
 	m_turninBtn->SetEnabled(true);

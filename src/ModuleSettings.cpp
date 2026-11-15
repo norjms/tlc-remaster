@@ -64,12 +64,12 @@ bool ModuleSettings::Init()
 	g_game->audioSystem->Load("data/cantina/buttonclick.ogg", "click");
 
     //exit button
-	imgNorm = load_bitmap("data/settings/button1.tga",0);
-	imgOver = load_bitmap("data/settings/button.tga",0);
+	imgNorm = load_bitmap("data/settings/button1.png",0);
+	imgOver = load_bitmap("data/settings/button.png",0);
 	btn_exit = new Button(
 		imgNorm, imgOver, NULL, 
 		10, SCREEN_HEIGHT-imgNorm->h-10, 
-        0, EVENT_EXIT, g_game->font22, "EXIT", GOLD, "click", true, true);
+        0, EVENT_EXIT, g_game->font22, "EXIT", UI_TEXT, "click", true, true);
 	if(!btn_exit) return false;
 	if(!btn_exit->IsInitialized()) return false;
 
@@ -77,7 +77,7 @@ bool ModuleSettings::Init()
 	btn_save = new Button(
 		imgNorm, imgOver, NULL, 
 		140, SCREEN_HEIGHT-imgNorm->h-10,  
-        0, EVENT_SAVESETTINGS, g_game->font22, "SAVE", GOLD, "click", true, true);
+        0, EVENT_SAVESETTINGS, g_game->font22, "SAVE", UI_TEXT, "click", true, true);
 	if(!btn_save) return false;
 	if(!btn_save->IsInitialized()) return false;
 
@@ -89,7 +89,7 @@ bool ModuleSettings::Init()
         y = 110+i*40;
 		btn_controls[i] = new Button(
 			imgNorm, imgOver, NULL, 
-			x, y, 0, EVENT_CONTROLS+i, g_game->font22, "", GOLD, "click", true, true);
+			x, y, 0, EVENT_CONTROLS+i, g_game->font22, "", UI_TEXT, "click", true, true);
 		if(!btn_controls[i]) return false;
 		if(!btn_controls[i]->IsInitialized()) return false;
 	}
@@ -137,20 +137,20 @@ bool ModuleSettings::Init()
 
     //create fullscreen toggle
     BITMAP *toggleImage=NULL;
-    toggleImage = (BITMAP*)load_bitmap("data/settings/button32_normal.bmp",NULL);
+    toggleImage = (BITMAP*)load_bitmap("data/settings/button32_normal.png",NULL);
     if (!toggleImage) {
         g_game->fatalerror("Settings: Error loading toggle image\n");
         return false;
     }
     BITMAP *toggleImageOver=NULL;
-    toggleImageOver = (BITMAP*)load_bitmap("data/settings/button32_over.bmp",NULL);
+    toggleImageOver = (BITMAP*)load_bitmap("data/settings/button32_over.png",NULL);
     if (!toggleImageOver) {
         g_game->fatalerror("Settings: Error loading toggle image\n");
         return false;
     }
 
     btn_fullscreen = new Button( toggleImage, toggleImageOver, NULL, 
-        40, 360, 0, EVENT_FULLSCREEN_BUTTON, g_game->font24, "", GOLD, "click", true, true);
+        40, 360, 0, EVENT_FULLSCREEN_BUTTON, g_game->font24, "", UI_TEXT, "click", true, true);
     if (!btn_fullscreen) return false;
     if (!btn_fullscreen->IsInitialized()) return false;
 

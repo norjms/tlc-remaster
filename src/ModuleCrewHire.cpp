@@ -849,12 +849,12 @@ bool ModuleCrewHire::Init()
 	//Create escape button for the module
 	btnNorm = (BITMAP*)chdata[GENERIC_EXIT_BTN_NORM_BMP].dat;
 	btnOver = (BITMAP*)chdata[GENERIC_EXIT_BTN_OVER_BMP].dat;
-	m_exitBtn = new Button(btnNorm,btnOver,NULL,EXITBTN_X,EXITBTN_Y,EVENT_NONE,EVENT_EXIT_CLICK, g_game->font24, "Exit", makecol(255,0,0),"click");
+	m_exitBtn = new Button(btnNorm,btnOver,NULL,EXITBTN_X,EXITBTN_Y,EVENT_NONE,EVENT_EXIT_CLICK, g_game->font24, "Exit", UI_TEXT,"click");
 	if (m_exitBtn == NULL) return false;
 	if (!m_exitBtn->IsInitialized()) return false;
 
 	//Create and initialize the Back button for the module
-	m_backBtn = new Button(btnNorm,btnOver,NULL,EXITBTN_X,EXITBTN_Y,EVENT_NONE,EVENT_BACK_CLICK, g_game->font24, "Back", makecol(255,0,0),"click");
+	m_backBtn = new Button(btnNorm,btnOver,NULL,EXITBTN_X,EXITBTN_Y,EVENT_NONE,EVENT_BACK_CLICK, g_game->font24, "Back", UI_TEXT,"click");
 	if (m_backBtn == NULL) return false;
 	if (!m_backBtn->IsInitialized()) return false;
 
@@ -862,7 +862,7 @@ bool ModuleCrewHire::Init()
 	btnNorm = (BITMAP*)chdata[PERSONEL_BTN2_BMP].dat;
 	btnOver = (BITMAP*)chdata[PERSONEL_BTN2_HOV_BMP].dat;
 	btnDis = (BITMAP*)chdata[PERSONEL_BTN2_DIS_BMP].dat;
-	m_hiremoreBtn = new Button(btnNorm,btnOver,btnDis,HIREMOREBTN_X,HIREMOREBTN_Y,EVENT_NONE,EVENT_HIREMORE_CLICK, g_game->font24, "Hire More Crew Members", makecol(0,255,255),"click");
+	m_hiremoreBtn = new Button(btnNorm,btnOver,btnDis,HIREMOREBTN_X,HIREMOREBTN_Y,EVENT_NONE,EVENT_HIREMORE_CLICK, g_game->font24, "Hire More Crew Members", UI_TEXT,"click");
 	if (m_hiremoreBtn == NULL)
 		return false;
 	if (!m_hiremoreBtn->IsInitialized())
@@ -872,17 +872,17 @@ bool ModuleCrewHire::Init()
 	btnNorm = (BITMAP*)chdata[PERSONEL_BTN_BMP].dat;
 	btnOver = (BITMAP*)chdata[PERSONEL_BTN_HOV_BMP].dat;
 	btnDis = (BITMAP*)chdata[PERSONEL_BTN_DIS_BMP].dat;
-	m_hireBtn = new Button(btnNorm,btnOver,btnDis,HIREBTN_X,HIREBTN_Y,EVENT_NONE,EVENT_HIRE_CLICK, g_game->font24, "Hire", makecol(0,255,255),"click");
+	m_hireBtn = new Button(btnNorm,btnOver,btnDis,HIREBTN_X,HIREBTN_Y,EVENT_NONE,EVENT_HIRE_CLICK, g_game->font24, "Hire", UI_TEXT,"click");
 	if (m_hireBtn == NULL)	return false;
 	if (!m_hireBtn->IsInitialized()) return false;
 
 	//Create and initialize the Fire button for the module
-	m_fireBtn = new Button(btnNorm,btnOver,btnDis,FIREBTN_X,FIREBTN_Y,EVENT_NONE,EVENT_FIRE_CLICK, g_game->font24, "Fire", makecol(0,255,255),"click");
+	m_fireBtn = new Button(btnNorm,btnOver,btnDis,FIREBTN_X,FIREBTN_Y,EVENT_NONE,EVENT_FIRE_CLICK, g_game->font24, "Fire", UI_TEXT,"click");
 	if (m_fireBtn == NULL)	return false;
 	if (!m_fireBtn->IsInitialized())	return false;
 
 	//Create and initialize the Assign Position button for the module
-	m_unassignBtn = new Button(btnNorm,btnOver,btnDis,UNASSIGNBTN_X,UNASSIGNBTN_Y,EVENT_NONE,EVENT_UNASSIGN_CLICK, g_game->font24, "Unassign", makecol(0,255,255),"click");
+	m_unassignBtn = new Button(btnNorm,btnOver,btnDis,UNASSIGNBTN_X,UNASSIGNBTN_Y,EVENT_NONE,EVENT_UNASSIGN_CLICK, g_game->font24, "Unassign", UI_TEXT,"click");
 	if (m_unassignBtn == NULL)	return false;
 	if (!m_unassignBtn->IsInitialized())	return false;
 
