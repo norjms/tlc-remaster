@@ -242,8 +242,8 @@ bool ModuleStarport::Init()
 	//load avatar
 	avatar = new Sprite();
 	avatar->setImage( (BITMAP*)spdata[STARPORT_AVATAR_BMP].dat );
-	avatar->setAnimColumns(8);
-	avatar->setTotalFrames(16);
+	avatar->setAnimColumns(16);
+	avatar->setTotalFrames(32);
 	avatar->setFrameHeight(237);
 	avatar->setFrameWidth(237);
 
@@ -257,7 +257,7 @@ bool ModuleStarport::Init()
 	}
 
 	avatar->setPos(playerx, playery);
-	avatar->setFrameDelay(3);
+	avatar->setFrameDelay(1);
 
 	movement = 0;
 	enteringDoor = false;
@@ -519,17 +519,17 @@ void ModuleStarport::Draw()
 		{
 		case 1: //Move Right
 			movePlayerRight(HORIZONTAL_MOVE_DISTANCE);
-			avatar->animate(0, 7);
+			avatar->animate(0, 15);
 		break;
 		case 2: //stop right
 			avatar->setCurrFrame(0);
 		break;
 		case -1: //move left
 			movePlayerLeft(HORIZONTAL_MOVE_DISTANCE);
-			avatar->animate(8, 15);
+			avatar->animate(16, 31);
 		break;
 		case -2: //stop left
-			avatar->setCurrFrame(8);
+			avatar->setCurrFrame(16);
 		break;
 		}
 	}
