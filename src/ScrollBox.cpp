@@ -172,51 +172,58 @@ void ScrollBox::ScrollBox::Draw(BITMAP *buffer)
 {
 	if (sbLinkedBox != NULL)
 		sbLinkedBox->Draw(buffer);
-	//Draw strings
-	if (sbRedraw)
+
+	/* The list is drawn straight onto the destination, clipped to the box,
+	   so the background (glass panels in the remastered screens) shows
+	   through. Hover and selection are translucent highlights. */
+	int ocl = buffer->cl, oct = buffer->ct, ocr = buffer->cr, ocb = buffer->cb;
+	int x0 = MAX(sbX, ocl), y0 = MAX(sbY, oct);
+	int x1 = MIN(sbX + sbWidth - 16, ocr), y1 = MIN(sbY + sbHeight, ocb);
+	if (x1 > x0 && y1 > y0)
 	{
-		//Clear buffer
-		clear_to_color(sbBuffer, BLACK);
+		set_clip_rect(buffer, x0, y0, x1 - 1, y1 - 1);
+		int top = sbY - sbWindowClipY;
 		int a = 0;
 		if (sbScrollBoxType == SB_TEXT)
 		{
 			for(std::list<ColoredString>::iterator myIt = sbTextLines.begin(); myIt != sbTextLines.end(); myIt++)
 			{
-				alfont_textprintf_ex(sbBuffer, sbFont, sbLeftPad, sbFontHeight * a + sbTopPad, 
-                    (*myIt).Color,-1,(*myIt).String.c_str());
+				alfont_textprintf_ex(buffer, sbFont, sbX + sbLeftPad, top + sbFontHeight * a + sbTopPad,
+					(*myIt).Color, -1, (*myIt).String.c_str());
 				a++;
 			}
 		}
 		else if (sbScrollBoxType == SB_LIST)
 		{
-            int color;
+			int color;
 			for(std::list<ListBoxItem>::iterator myIt = sbListBoxItems.begin(); myIt != sbListBoxItems.end(); myIt++)
 			{
+				int iy = top + sbFontHeight * a;
 				if ((*myIt).selected)
-                {
-					blit((*myIt).bSelected, sbBuffer, 0, 0, 0, sbFontHeight * a, sbWidth, sbHeight);
-                    color = ColorSelectedText;
-                }
+				{
+					set_trans_blender(0, 0, 0, 170);
+					draw_trans_sprite(buffer, (*myIt).bSelected, sbX, iy);
+					color = ColorSelectedText;
+				}
 				else if ((*myIt).hover)
-                {
-					blit((*myIt).bHover, sbBuffer, 0, 0, 0, sbFontHeight * a, sbWidth, sbHeight);
-                    color = (*myIt).text.Color;
-                }
+				{
+					set_trans_blender(0, 0, 0, 110);
+					draw_trans_sprite(buffer, (*myIt).bHover, sbX, iy);
+					color = (*myIt).text.Color;
+				}
 				else
-                {
-					blit((*myIt).bNormal, sbBuffer, 0, 0, 0, sbFontHeight * a, sbWidth, sbHeight);
-                    color = (*myIt).text.Color;
-                }
-
-				alfont_textprintf_ex(sbBuffer, sbFont, sbLeftPad, sbFontHeight * a + sbTopPad, 
-                    color,-1,(*myIt).text.String.c_str());
+				{
+					color = (*myIt).text.Color;
+				}
+				alfont_textprintf_ex(buffer, sbFont, sbX + sbLeftPad, iy + sbTopPad,
+					color, -1, (*myIt).text.String.c_str());
 				a++;
 			}
 		}
-		sbRedraw = false;
+		set_clip_rect(buffer, ocl, oct, ocr - 1, ocb - 1);
 	}
-	//Draw buffer to screen
-	blit(sbBuffer, buffer, 0, sbWindowClipY, sbX, sbY, sbWidth - 16, sbHeight);
+	sbRedraw = false;
+
 	//Draw buttons to buffer
 	if (sbDrawBar)
 	{

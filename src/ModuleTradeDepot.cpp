@@ -1,5 +1,6 @@
 #include "env.h"
 #include "ModuleTradeDepot.h"
+#include <map>
 #include "Button.h"
 #include "ScrollBox.h"
 #include "AudioSystem.h"
@@ -650,45 +651,36 @@ void ModuleTradeDepot::Draw()
          m_buttons[i]->Run(canvas);
    }
 
-   //draw portrait
-   //case logic
-   //447,443
+   //draw portrait (the remastered icons have transparent backgrounds,
+   //so they are alpha blended; files are loaded once and kept)
+   BITMAP *icon = NULL;
    if(portrait_string == ""){
 	switch(item_to_display){
-		case IT_ARTIFACT:
-			blit(item_portrait[0],canvas,0,0,447,443,128,128);
-			break;
-		//case IT_SPECIALTYGOOD:
-		//	blit(item_portrait[1],canvas,0,0,447,443,128,128);
-		//	break;
-		case IT_MINERAL:
-			blit(item_portrait[2],canvas,0,0,447,443,128,128);
-			break;
-		case IT_LIFEFORM:
-			blit(item_portrait[3],canvas,0,0,447,443,128,128);
-			break;
-		case IT_TRADEITEM:
-			blit(item_portrait[4],canvas,0,0,447,443,128,128);
-			break;
-		//case IT_SHIPUPGRADE:
-		//	blit(item_portrait[5],canvas,0,0,447,443,128,128);
-		//	break;
+		case IT_ARTIFACT:  icon = item_portrait[0]; break;
+		case IT_MINERAL:   icon = item_portrait[2]; break;
+		case IT_LIFEFORM:  icon = item_portrait[3]; break;
+		case IT_TRADEITEM: icon = item_portrait[4]; break;
 		case IT_INVALID:
 		default:
 		   break;
-   }
+	}
    }else{
-	   BITMAP* temp_bmp;
-	   std::string temp_string = "data/tradedepot/" + portrait_string;
-	   temp_bmp = load_bitmap(temp_string.c_str(),NULL);
-	   if (temp_bmp) {
-		blit(temp_bmp,canvas,0,0,447,443,128,128);
-		destroy_bitmap(temp_bmp);
-	   }
+	   static std::map<std::string, BITMAP*> cache;
+	   std::map<std::string, BITMAP*>::iterator it = cache.find(portrait_string);
+	   if (it != cache.end()) icon = it->second;
 	   else {
-		   string s = "TradeDepot: ERROR! " + temp_string + " not found!";
-		   debug << s << endl;
+		   std::string temp_string = "data/tradedepot/" + portrait_string;
+		   icon = load_bitmap(temp_string.c_str(),NULL);
+		   if (!icon) {
+			   string s = "TradeDepot: ERROR! " + temp_string + " not found!";
+			   debug << s << endl;
+		   }
+		   cache[portrait_string] = icon;
 	   }
+   }
+   if (icon) {
+	   set_alpha_blender();
+	   draw_trans_sprite(canvas, icon, 447, 443);
    }
 }
 
