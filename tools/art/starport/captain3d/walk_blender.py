@@ -40,6 +40,7 @@ def cut_pack(body, H, margin=0.03):
     waist = vs[(vs[:, 2] > 0.44 * H) & (vs[:, 2] < 0.50 * H) & (np.abs(vs[:, 0]) < 0.15)]
     yb = np.percentile(waist[:, 1], 97) + margin
     print('pack cut at y >', yb)
+    global PACK_Y; PACK_Y = yb - margin
     # a UV on the back of the waist, to texture the new back panel
     best = None
     for f in bm.faces:
@@ -87,6 +88,51 @@ def cut_floaters(body, H, frac=0.04):
     print('islands', sorted(len(c) for c in islands)[-6:], 'front cut y <', yf, 'removed', len(kill))
     bmesh.ops.delete(bm, geom=kill, context='VERTS')
     bm.to_mesh(me); bm.free(); me.update()
+
+PACK_Y = None
+def add_pack(body, back_y, H):
+    """Model an EMU-style life support pack (tall rounded box + secondary oxygen pack under it) and join it to the body,
+    weighted fully to the spine so it rides with the torso. Character faces -Y; the back is +Y."""
+    import bmesh
+    mat = bpy.data.materials.new('pack_fabric'); mat.use_nodes = True
+    nt = mat.node_tree; bsdf = nt.nodes['Principled BSDF']
+    bsdf.inputs['Base Color'].default_value = (0.80, 0.79, 0.76, 1)
+    bsdf.inputs['Roughness'].default_value = 0.85
+    tex = nt.nodes.new('ShaderNodeTexNoise'); tex.inputs['Scale'].default_value = 60.0
+    bump = nt.nodes.new('ShaderNodeBump'); bump.inputs['Strength'].default_value = 0.08
+    nt.links.new(tex.outputs['Fac'], bump.inputs['Height']); nt.links.new(bump.outputs['Normal'], bsdf.inputs['Normal'])
+    dark = bpy.data.materials.new('pack_trim'); dark.use_nodes = True
+    dark.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (0.32, 0.32, 0.33, 1)
+    dark.node_tree.nodes['Principled BSDF'].inputs['Roughness'].default_value = 0.5
+
+    def box(name, cx, cy, cz, sx, sy, sz, bevel, m):
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(cx, cy, cz))
+        o = bpy.context.active_object; o.name = name; o.scale = (sx, sy, sz)
+        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+        bv = o.modifiers.new('bv', 'BEVEL'); bv.width = bevel; bv.segments = 4; bv.limit_method = 'NONE'
+        bpy.ops.object.modifier_apply(modifier='bv')
+        o.data.materials.append(m)
+        for p in o.data.polygons: p.use_smooth = True
+        return o
+
+    d = 0.24                                   # pack depth
+    y0 = back_y - float(os.environ.get('PACK_IN', '0.055'))                        # front face sits on the back
+    parts = [
+        box('plss', 0, y0 + d / 2, 1.275, 0.54, d, 0.70, 0.045, mat),                 # main pack: top ~1.55 m, behind the helmet
+        box('sop', 0, y0 + 0.19 / 2, 0.86, 0.44, 0.19, 0.13, 0.03, mat),             # secondary oxygen pack at its base
+        box('rib1', 0, y0 + d + 0.004, 1.42, 0.40, 0.012, 0.018, 0.005, dark),        # panel seams on the back face
+        box('rib2', 0, y0 + d + 0.004, 1.10, 0.40, 0.012, 0.018, 0.005, dark),
+        box('vent', 0.17, y0 + d * 0.5, 1.615, 0.06, 0.10, 0.035, 0.01, dark),         # top fittings
+        box('vent2', -0.17, y0 + d * 0.5, 1.615, 0.06, 0.10, 0.035, 0.01, dark),
+    ]
+    nb = len(body.data.vertices)
+    for o in bpy.context.scene.objects: o.select_set(False)
+    for p in parts: p.select_set(True)
+    body.select_set(True); bpy.context.view_layer.objects.active = body
+    bpy.ops.object.join()
+    g = body.vertex_groups['spine']
+    g.add(list(range(nb, len(body.data.vertices))), 1.0, 'REPLACE')
+    print('pack added', len(body.data.vertices) - nb, 'verts at back y', round(back_y, 3))
 
 V = np.array([v.co[:] for v in body.data.vertices]); H = 1.8
 if os.environ.get('CUT_PACK') == '1':
@@ -155,6 +201,8 @@ for j, n in enumerate(names):
     g = body.vertex_groups.new(name=n)
     idx = np.nonzero(W[:, j] > 0.02)[0]
     for i in idx: g.add([int(i)], float(W[i, j]), 'REPLACE')
+if os.environ.get('ADD_PACK') == '1':
+    add_pack(body, PACK_Y if PACK_Y is not None else float(np.percentile(V[:, 1], 97)), H)
 body.parent = rig
 md = body.modifiers.new('arm', 'ARMATURE'); md.object = rig
 
