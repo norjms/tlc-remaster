@@ -6,6 +6,13 @@
 
 namespace a4 {
 
+/* Resolution independence: the game works in its 1024x768 coordinates while
+   every bitmap stores scale x scale real pixels per game pixel. 'scale' is
+   chosen once from the display (see set_gfx_mode); bitmaps the game creates
+   use it, images are loaded at the best art tier available (name@2x.png...),
+   and blits resample between bitmaps of different scales. */
+extern int g_scale;
+
 /* set whenever something draws to 'screen' (or a sub-bitmap of it);
    cleared by a4_flip() */
 extern bool screen_dirty;
@@ -17,7 +24,13 @@ inline void touch(BITMAP *b)
 
 inline bool is_mask(uint32_t c) { return (c & 0x00FFFFFFu) == 0x00FF00FFu; }
 
+/* storage row y (0 .. h*scale-1) */
 inline uint32_t *row(BITMAP *b, int y) { return b->pixels + (size_t)y * b->pitch; }
+inline int sw(const BITMAP *b) { return b->w * b->scale; }
+inline int sh(const BITMAP *b) { return b->h * b->scale; }
+
+/* a bitmap with an explicit storage scale (create_bitmap uses g_scale) */
+BITMAP *create_bitmap_scaled(int width, int height, int scale);
 
 /* blend src over dst with alpha 0..255; the result keeps dst's alpha byte */
 inline uint32_t blend(uint32_t src, uint32_t dst, unsigned a)

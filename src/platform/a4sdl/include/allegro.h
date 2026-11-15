@@ -72,11 +72,12 @@ static inline double fixtof(fixed x)   { return (double)x / 65536.0; }
 
 typedef struct BITMAP
 {
-   int w, h;               /* size */
+   int w, h;               /* size in game (logical) pixels */
    int clip;               /* clipping enabled (always, kept for compatibility) */
-   int cl, cr, ct, cb;     /* clip rectangle: [cl,cr) x [ct,cb) */
-   uint32_t *pixels;       /* first pixel of row 0 */
-   int pitch;              /* row stride in pixels */
+   int cl, cr, ct, cb;     /* clip rectangle in game pixels: [cl,cr) x [ct,cb) */
+   int scale;              /* storage pixels per game pixel (1..4); the game never sees it */
+   uint32_t *pixels;       /* first storage pixel of row 0 (w*scale x h*scale) */
+   int pitch;              /* storage row stride in pixels */
    int owns_pixels;        /* false for sub-bitmaps */
    struct BITMAP *parent;  /* for sub-bitmaps, the bitmap that owns the pixels */
    int is_screen;          /* drawing to it marks the display dirty */

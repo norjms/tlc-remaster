@@ -238,7 +238,7 @@ void test_frame()
 			want = g_frame % 120 == 0;
 		}
 		if (want) {
-			SDL_Surface *s = SDL_CreateSurfaceFrom(screen->w, screen->h, SDL_PIXELFORMAT_XRGB8888, screen->pixels, screen->pitch * 4);
+			SDL_Surface *s = SDL_CreateSurfaceFrom(a4::sw(screen), a4::sh(screen), SDL_PIXELFORMAT_XRGB8888, screen->pixels, screen->pitch * 4);
 			if (s) {
 				char name[512];
 				snprintf(name, sizeof name, "%s/frame_%05ld.bmp", dir, g_frame);
@@ -438,6 +438,26 @@ void a4_set_logical_size(int w, int h)
 	g_logical_h = h;
 }
 
+/* Storage scale: enough real pixels per game pixel to cover the display
+   (1..4). A4_SCALE=n forces it; 1 reproduces the original rendering. */
+static int choose_scale(int lh)
+{
+	if (const char *e = getenv("A4_SCALE")) {
+		int n = atoi(e);
+		if (n >= 1 && n <= 4) return n;
+	}
+	int S = 1;
+	SDL_DisplayID d = g_window ? SDL_GetDisplayForWindow(g_window) : SDL_GetPrimaryDisplay();
+	if (const SDL_DisplayMode *m = d ? SDL_GetDesktopDisplayMode(d) : NULL) {
+		float density = m->pixel_density > 0 ? m->pixel_density : 1.0f;
+		int ph = (int)(m->h * density + 0.5f);
+		S = (ph + lh - 1) / lh;
+	}
+	if (S < 1) S = 1;
+	if (S > 4) S = 4;
+	return S;
+}
+
 int set_gfx_mode(int card, int w, int h, int, int)
 {
 	if (card == GFX_TEXT) return 0;   /* the game calls this before switching modes */
@@ -461,15 +481,18 @@ int set_gfx_mode(int card, int w, int h, int, int)
 	SDL_SetWindowFullscreen(g_window, fullscreen);
 	SDL_SetRenderLogicalPresentation(g_renderer, lw, lh, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
-	if (!screen || screen->w != lw || screen->h != lh) {
+	int S = choose_scale(lh);
+	if (!screen || screen->w != lw || screen->h != lh || screen->scale != S) {
 		if (g_texture) { SDL_DestroyTexture(g_texture); g_texture = NULL; }
 		if (screen) { BITMAP *s = screen; screen = NULL; destroy_bitmap(s); }
-		screen = create_bitmap(lw, lh);
+		a4::g_scale = S;
+		screen = a4::create_bitmap_scaled(lw, lh, S);
 		if (!screen) return -1;
 		screen->is_screen = 1;
-		g_texture = SDL_CreateTexture(g_renderer, SDL_PIXELFORMAT_XRGB8888, SDL_TEXTUREACCESS_STREAMING, lw, lh);
+		g_texture = SDL_CreateTexture(g_renderer, SDL_PIXELFORMAT_XRGB8888, SDL_TEXTUREACCESS_STREAMING, lw * S, lh * S);
 		if (!g_texture) { fprintf(stderr, "a4sdl: SDL_CreateTexture: %s\n", SDL_GetError()); return -1; }
 		SDL_SetTextureScaleMode(g_texture, SDL_SCALEMODE_LINEAR);
+		fprintf(stderr, "a4sdl: drawing at %dx%d (%dx the game's %dx%d)\n", lw * S, lh * S, S, lw, lh);
 	}
 	clear_bitmap(screen);
 	if (!g_os_cursor) SDL_HideCursor();

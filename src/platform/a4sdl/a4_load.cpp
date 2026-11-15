@@ -9,7 +9,9 @@
  */
 #include "a4_internal.h"
 
+#include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -108,22 +110,105 @@ static bool read_file(const std::string &path, std::vector<unsigned char> &out)
 
 /* ---------------------------------------------------------------- images */
 
+static unsigned char *decode(const std::string &path, int &w, int &h, int &comp)
+{
+	std::vector<unsigned char> data;
+	if (!read_file(path, data)) return NULL;
+	return stbi_load_from_memory(data.data(), (int)data.size(), &w, &h, &comp, 4);
+}
+
+/* High resolution art tiers: next to "ship.tga" may sit "ship@2x.png",
+   "ship@4x.png"..., the same picture at 2x, 4x... the size. When the
+   display scale is above 1 the best tier is resampled to exactly that
+   scale. Tier transparency becomes the mask colour for images that use
+   one (no alpha channel in the original). */
+static std::string tier_path(const std::string &path, int n)
+{
+	size_t slash = path.find_last_of('/');
+	size_t dot = path.find_last_of('.');
+	std::string stem = (dot == std::string::npos || (slash != std::string::npos && dot < slash)) ? path : path.substr(0, dot);
+	return stem + "@" + std::to_string(n) + "x.png";
+}
+
+static BITMAP *load_tier(const std::string &path, int w, int h, bool base_alpha)
+{
+	const int S = a4::g_scale;
+	if (S <= 1) return NULL;
+	/* prefer the smallest tier at or above S, else the largest below it */
+	int order[8], n = 0;
+	for (int k = S; k <= 8; k++) order[n++] = k;
+	for (int k = S - 1; k >= 2 && n < 8; k--) order[n++] = k;
+	for (int i = 0; i < n; i++) {
+		int N = order[i];
+		std::string tp = a4::resolve_path(tier_path(path, N).c_str());
+		std::error_code ec;
+		if (!fs::exists(fs::u8path(tp), ec)) continue;
+		int tw = 0, th = 0, comp = 0;
+		unsigned char *px = decode(tp, tw, th, comp);
+		if (!px) continue;
+		if (tw != w * N || th != h * N) {
+			fprintf(stderr, "a4sdl: %s is %dx%d, expected %dx%d; ignored\n", tp.c_str(), tw, th, w * N, h * N);
+			stbi_image_free(px);
+			continue;
+		}
+		BITMAP *b = a4::create_bitmap_scaled(w, h, S);
+		if (!b) { stbi_image_free(px); return NULL; }
+		/* area resample N -> S per game pixel, alpha weighted */
+		const int SW = w * S, SH = h * S;
+		for (int Y = 0; Y < SH; Y++) {
+			uint32_t *d = a4::row(b, Y);
+			double y0 = (double)Y * N / S, y1 = (double)(Y + 1) * N / S;
+			for (int X = 0; X < SW; X++) {
+				double x0 = (double)X * N / S, x1 = (double)(X + 1) * N / S;
+				double r = 0, g = 0, bl = 0, a = 0, area = 0;
+				for (int sy = (int)y0; sy < (int)ceil(y1); sy++) {
+					double wy = std::min(y1, sy + 1.0) - std::max(y0, (double)sy);
+					if (wy <= 0) continue;
+					const unsigned char *q = px + ((size_t)sy * tw) * 4;
+					for (int sx = (int)x0; sx < (int)ceil(x1); sx++) {
+						double wx = std::min(x1, sx + 1.0) - std::max(x0, (double)sx);
+						if (wx <= 0) continue;
+						const unsigned char *c = q + (size_t)sx * 4;
+						double wgt = wx * wy, al = c[3] / 255.0;
+						r += c[0] * al * wgt; g += c[1] * al * wgt; bl += c[2] * al * wgt;
+						a += al * wgt; area += wgt;
+					}
+				}
+				double alpha = area > 0 ? a / area : 0;
+				uint32_t R = a > 0 ? (uint32_t)(r / a + 0.5) : 0;
+				uint32_t G = a > 0 ? (uint32_t)(g / a + 0.5) : 0;
+				uint32_t B = a > 0 ? (uint32_t)(bl / a + 0.5) : 0;
+				uint32_t col = (R << 16) | (G << 8) | B;
+				if (base_alpha) {
+					d[X] = ((uint32_t)(alpha * 255 + 0.5) << 24) | col;
+				} else if (alpha < 0.5) {
+					d[X] = MASK_COLOR_32;
+				} else {
+					if (a4::is_mask(col)) col ^= 0x00010000u;
+					d[X] = col;
+				}
+			}
+		}
+		stbi_image_free(px);
+		return b;
+	}
+	return NULL;
+}
+
 BITMAP *load_bitmap(const char *filename, RGB *pal)
 {
 	(void)pal;
 	std::string path = a4::resolve_path(filename);
-	std::vector<unsigned char> data;
-	if (!read_file(path, data)) return NULL;
-
 	int w = 0, h = 0, comp = 0;
-	unsigned char *px = stbi_load_from_memory(data.data(), (int)data.size(), &w, &h, &comp, 4);
+	unsigned char *px = decode(path, w, h, comp);
 	if (!px) return NULL;
-
-	BITMAP *b = create_bitmap(w, h);
-	if (!b) { stbi_image_free(px); return NULL; }
 
 	/* Allegro keeps alpha only for images that have it */
 	bool has_alpha = (comp == 2 || comp == 4);
+	if (BITMAP *hd = load_tier(path, w, h, has_alpha)) { stbi_image_free(px); return hd; }
+
+	BITMAP *b = a4::create_bitmap_scaled(w, h, 1);
+	if (!b) { stbi_image_free(px); return NULL; }
 	const unsigned char *s = px;
 	for (int y = 0; y < h; y++) {
 		uint32_t *d = a4::row(b, y);
@@ -220,7 +305,7 @@ BITMAP *read_bitmap_object(Reader &rd)
 	int w = (uint16_t)rd.mgetw();
 	int h = (uint16_t)rd.mgetw();
 	if (!rd.ok) return NULL;
-	BITMAP *b = create_bitmap(w, h);
+	BITMAP *b = a4::create_bitmap_scaled(w, h, 1);
 	if (!b) return NULL;
 	switch (bits) {
 	case 32:

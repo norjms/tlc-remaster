@@ -37,7 +37,7 @@ struct ALFONT_FONT
 	int size = 12;
 	float scale = 1;
 	int ascender = 0;
-	std::map<std::pair<int, int>, Glyph> cache;   /* (size, codepoint) */
+	std::map<std::pair<int, int>, Glyph> cache;   /* (size*8 + storage scale, codepoint) */
 };
 
 /* AllegroFont's alfont_set_font_size() does not use h as the em size: it
@@ -74,16 +74,20 @@ static void apply_size(ALFONT_FONT *f, int h)
 	f->cache.clear();
 }
 
-static const Glyph &glyph(ALFONT_FONT *f, int cp)
+/* Glyph for codepoint cp rasterized at storage scale s. The advance is
+   always the scale-1 advance (game pixels) so layout never changes with
+   the display; the bitmap is drawn at s times the size for sharp text. */
+static const Glyph &glyph(ALFONT_FONT *f, int cp, int s = 1)
 {
-	auto k = std::make_pair(f->size, cp);
+	auto k = std::make_pair(f->size * 8 + s, cp);
 	auto it = f->cache.find(k);
 	if (it != f->cache.end()) return it->second;
 	Glyph g;
 	int adv = 0, lsb = 0;
 	stbtt_GetCodepointHMetrics(&f->info, cp, &adv, &lsb);
 	g.advance = (int)floorf(adv * f->scale + 0.5f);
-	unsigned char *bm = stbtt_GetCodepointBitmap(&f->info, f->scale, f->scale, cp, &g.w, &g.h, &g.xoff, &g.yoff);
+	float rs = f->scale * s;
+	unsigned char *bm = stbtt_GetCodepointBitmap(&f->info, rs, rs, cp, &g.w, &g.h, &g.xoff, &g.yoff);
 	if (bm) {
 		g.alpha.assign(bm, bm + (size_t)g.w * g.h);
 		stbtt_FreeBitmap(bm, NULL);
@@ -98,26 +102,29 @@ static int text_width(ALFONT_FONT *f, const char *s)
 	return w;
 }
 
-static void draw_text(BITMAP *b, ALFONT_FONT *f, const char *s, int x, int y, int color, int bg)
+static void draw_text(BITMAP *b, ALFONT_FONT *f, const char *s_, int x, int y, int color, int bg)
 {
-	if (!b || !f || !s) return;
-	if (bg >= 0) rectfill(b, x, y, x + text_width(f, s) - 1, y + f->size - 1, bg);
+	if (!b || !f || !s_) return;
+	if (bg >= 0) rectfill(b, x, y, x + text_width(f, s_) - 1, y + f->size - 1, bg);
 	uint32_t c = (color == -1) ? 0x00FFFFFFu : (uint32_t)color;
+	const int s = b->scale;
+	const int CL = b->cl * s, CR = b->cr * s, CT = b->ct * s, CB = b->cb * s;
 	int pen = x, base = y + f->ascender;
-	for (const unsigned char *p = (const unsigned char *)s; *p; p++) {
-		const Glyph &g = glyph(f, *p);
+	for (const unsigned char *p = (const unsigned char *)s_; *p; p++) {
+		const Glyph &adv = glyph(f, *p);
+		const Glyph &g = s == 1 ? adv : glyph(f, *p, s);
 		for (int gy = 0; gy < g.h; gy++) {
-			int dy = base + g.yoff + gy;
-			if (dy < b->ct || dy >= b->cb) continue;
+			int dy = base * s + g.yoff + gy;
+			if (dy < CT || dy >= CB) continue;
 			uint32_t *drow = a4::row(b, dy);
 			const unsigned char *arow = &g.alpha[(size_t)gy * g.w];
 			for (int gx = 0; gx < g.w; gx++) {
-				int dx = pen + g.xoff + gx;
-				if (dx < b->cl || dx >= b->cr || !arow[gx]) continue;
+				int dx = pen * s + g.xoff + gx;
+				if (dx < CL || dx >= CR || !arow[gx]) continue;
 				drow[dx] = a4::blend(c, drow[dx], arow[gx]);
 			}
 		}
-		pen += g.advance;
+		pen += adv.advance;
 	}
 	a4::touch(b);
 }
