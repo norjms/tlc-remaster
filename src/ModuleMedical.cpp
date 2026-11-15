@@ -552,7 +552,7 @@ void ModuleMedical::MedicalUpdate()
     //CAPTAIN TREAT
 	if(g_game->gameState->officerCap->attributes.getVitality() <= 0)
 	{
-		OfficerBtns[0]->SetTextColor(BLACK);
+		OfficerBtns[0]->SetTextColor(UI_TEXT);
 	}
 	else if(g_game->gameState->officerCap->isBeingHealed() == true)
 	{
@@ -586,7 +586,7 @@ void ModuleMedical::MedicalUpdate()
     //SCIENCE TREAT
     if(g_game->gameState->officerSci->attributes.getVitality() <= 0)
 	{
-		OfficerBtns[1]->SetTextColor(BLACK);
+		OfficerBtns[1]->SetTextColor(UI_TEXT);
 	}
 	else if( g_game->gameState->officerSci->isBeingHealed() == true)
 	{
@@ -613,7 +613,7 @@ void ModuleMedical::MedicalUpdate()
 
     //NAVIGATION TREAT
 	if(g_game->gameState->officerNav->attributes.getVitality() <= 0){
-		OfficerBtns[2]->SetTextColor(BLACK);
+		OfficerBtns[2]->SetTextColor(UI_TEXT);
 	}else if(g_game->gameState->officerNav->isBeingHealed() == true){
 		OfficerBtns[2]->SetTextColor(LTGREEN);
 		if(currentDoc->CanSkillCheck() == true){
@@ -639,7 +639,7 @@ void ModuleMedical::MedicalUpdate()
     //TACTICAL TREAT
 	if(g_game->gameState->officerTac->attributes.getVitality() <= 0)
 	{
-		OfficerBtns[3]->SetTextColor(BLACK);
+		OfficerBtns[3]->SetTextColor(UI_TEXT);
 	}else if(g_game->gameState->officerTac->isBeingHealed() == true)
 	{
 		OfficerBtns[3]->SetTextColor(LTGREEN);
@@ -669,7 +669,7 @@ void ModuleMedical::MedicalUpdate()
     //ENGINEER TREAT
 	if(g_game->gameState->officerEng->attributes.getVitality() <= 0)
 	{
-		OfficerBtns[4]->SetTextColor(BLACK);
+		OfficerBtns[4]->SetTextColor(UI_TEXT);
 	}
 	else if(g_game->gameState->officerEng->isBeingHealed() == true)
 	{
@@ -697,7 +697,7 @@ void ModuleMedical::MedicalUpdate()
 
     //COMMUNICATIONS TREAT
 	if(g_game->gameState->officerCom->attributes.getVitality() <= 0){
-		OfficerBtns[5]->SetTextColor(BLACK);
+		OfficerBtns[5]->SetTextColor(UI_TEXT);
 	}else if(g_game->gameState->officerCom->isBeingHealed() == true){
 		OfficerBtns[5]->SetTextColor(LTGREEN);
 		if(currentDoc->CanSkillCheck() == true){
@@ -723,7 +723,7 @@ void ModuleMedical::MedicalUpdate()
     //DOCTOR TREAT
 	if(g_game->gameState->officerDoc->attributes.getVitality() <= 0)
     {
-		OfficerBtns[6]->SetTextColor(BLACK);
+		OfficerBtns[6]->SetTextColor(UI_TEXT);
 	}
     else if(g_game->gameState->officerDoc->isBeingHealed() )
     {

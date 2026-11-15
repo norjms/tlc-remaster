@@ -199,6 +199,21 @@ BITMAP *load_bitmap(const char *filename, RGB *pal)
 {
 	(void)pal;
 	std::string path = a4::resolve_path(filename);
+	/* remaster override: "name.png" next to a requested "name.bmp" or
+	   "name.tga" replaces it, so new art needs no code change */
+	{
+		std::string req = filename ? filename : "";
+		size_t slash = req.find_last_of("/\\"), dot = req.find_last_of('.');
+		if (dot != std::string::npos && (slash == std::string::npos || dot > slash)) {
+			std::string ext = req.substr(dot);
+			for (auto &c : ext) c = (char)tolower((unsigned char)c);
+			if (ext != ".png") {
+				std::string alt = a4::resolve_path((req.substr(0, dot) + ".png").c_str());
+				std::error_code ec;
+				if (fs::exists(fs::u8path(alt), ec)) path = alt;
+			}
+		}
+	}
 	int w = 0, h = 0, comp = 0;
 	unsigned char *px = decode(path, w, h, comp);
 	if (!px) return NULL;

@@ -124,7 +124,7 @@ bool ModuleAuxiliaryDisplay::Init()
 	}
 
     //create a new color
-	HEADING_COLOR = makecol(0,168,168);
+	HEADING_COLOR = makecol(110,214,255);
 
 
 	canvas = g_game->GetBackBuffer();
@@ -334,7 +334,7 @@ void ModuleAuxiliaryDisplay::updateAll()
 
 void ModuleAuxiliaryDisplay::updateCap()
 {
-	int HEADING_COLOR = makecol(0,168,168);
+	int HEADING_COLOR = makecol(110,214,255);
 	Ship ship = g_game->gameState->getShip();
 	ProfessionType profession;
 	std::ostringstream os;
@@ -383,7 +383,7 @@ void ModuleAuxiliaryDisplay::updateSci()
 
 void ModuleAuxiliaryDisplay::updateNav()
 {
-	int HEADING_COLOR = makecol(0,168,168);
+	int HEADING_COLOR = makecol(110,214,255);
 	ostringstream os;
 	int x = asx,y = asy+130;
 	char s[255];
@@ -627,7 +627,7 @@ void ModuleAuxiliaryDisplay::DrawBackground()
 void ModuleAuxiliaryDisplay::DrawContent()
 {
 	//clear the "lcd" portion of the screen with darkgreen
-	static int lcdcolor = makecol(20,40,0);
+	static int lcdcolor = makecol(5,9,16);
 	rectfill(canvas, asx, asy, asx+asw, asy+ash, lcdcolor);
 
 	updateAll();

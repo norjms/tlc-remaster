@@ -126,6 +126,8 @@ static BITMAP *root_of(BITMAP *b)
 static void fill_s(BITMAP *b, int X0, int Y0, int X1, int Y1, uint32_t c)
 {
 	int s = b->scale;
+	/* opaque game colours (alpha byte 0) stay opaque on remaster art */
+	if (b->alpha_sprite && (c >> 24) == 0 && !is_mask(c)) c |= 0xFF000000u;
 	X0 = MAX(X0, b->cl * s); X1 = MIN(X1, b->cr * s);
 	Y0 = MAX(Y0, b->ct * s); Y1 = MIN(Y1, b->cb * s);
 	for (int Y = Y0; Y < Y1; Y++) {
@@ -433,7 +435,10 @@ void transfer(BITMAP *s, BITMAP *d, int sx, int sy, int sw_, int sh_,
 		src_pitch = SW;
 	}
 
-	const bool fast_copy = (mode == COPY && box == 1 && nx == mx && !hflip);
+	/* drawing old art onto remaster art: its pixels are opaque */
+	const bool fix_a = d->alpha_sprite && !s->alpha_sprite;
+	const bool over = d->alpha_sprite != 0;
+	const bool fast_copy = (mode == COPY && box == 1 && nx == mx && !hflip && !fix_a);
 	for (int Y = Y0; Y < Y1; Y++) {
 		int SY = ymap[Y - Y0];
 		if (SY < 0 || SY + box > SH) continue;
@@ -469,7 +474,7 @@ void transfer(BITMAP *s, BITMAP *d, int sx, int sy, int sw_, int sh_,
 					}
 					if (al == 0) continue;
 					c = ((al / tot) << 24) | ((r / al) << 16) | ((g / al) << 8) | (bl / al);
-					dp[X] = a4::blend(c, dp[X], c >> 24);
+					dp[X] = over ? a4::blend_over(c, dp[X], c >> 24) : a4::blend(c, dp[X], c >> 24);
 					continue;
 				}
 				for (int j = 0; j < box; j++) {
@@ -486,12 +491,12 @@ void transfer(BITMAP *s, BITMAP *d, int sx, int sy, int sw_, int sh_,
 				if (is_mask(c)) c ^= 0x00010000u;   /* never produce the mask colour by averaging */
 			}
 			if (mode == ALPHA) {
-				dp[X] = a4::blend(c, dp[X], c >> 24);
+				dp[X] = over ? a4::blend_over(c, dp[X], c >> 24) : a4::blend(c, dp[X], c >> 24);
 			} else if (mode == TRANS) {
 				unsigned a = g_alpha_blender ? (c >> 24) : (unsigned)g_trans_alpha;
-				dp[X] = a4::blend(c, dp[X], a);
+				dp[X] = over ? a4::blend_over(c, dp[X], a) : a4::blend(c, dp[X], a);
 			} else {
-				dp[X] = c;
+				dp[X] = (fix_a && (c >> 24) == 0) ? (c | 0xFF000000u) : c;
 			}
 		}
 	}

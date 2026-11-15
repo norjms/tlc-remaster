@@ -121,7 +121,12 @@ static void draw_text(BITMAP *b, ALFONT_FONT *f, const char *s_, int x, int y, i
 			for (int gx = 0; gx < g.w; gx++) {
 				int dx = pen * s + g.xoff + gx;
 				if (dx < CL || dx >= CR || !arow[gx]) continue;
-				drow[dx] = a4::blend(c, drow[dx], arow[gx]);
+				if (a4::is_mask(drow[dx])) {
+					/* over the mask colour: solid or nothing, never pink */
+					if (arow[gx] >= 100) drow[dx] = (c & 0x00FFFFFFu) | (b->alpha_sprite ? 0xFF000000u : (drow[dx] & 0xFF000000u));
+					continue;
+				}
+				drow[dx] = b->alpha_sprite ? a4::blend_over(c, drow[dx], arow[gx]) : a4::blend(c, drow[dx], arow[gx]);
 			}
 		}
 		pen += adv.advance;

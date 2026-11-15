@@ -43,6 +43,17 @@ inline uint32_t blend(uint32_t src, uint32_t dst, unsigned a)
 	return rb | g | (dst & 0xFF000000u);
 }
 
+/* src over dst for an alpha sprite destination: colour as blend(), and the
+   coverage adds up (a over da) so what is drawn stays visible */
+inline uint32_t blend_over(uint32_t src, uint32_t dst, unsigned a)
+{
+	uint32_t c = blend(src, dst, a);
+	unsigned da = dst >> 24;
+	unsigned oa = a + (da * (255 - (a > 255 ? 255 : a)) + 127) / 255;
+	if (oa > 255) oa = 255;
+	return (c & 0x00FFFFFFu) | ((uint32_t)oa << 24);
+}
+
 /* Resolve a game path to a real file: accepts '\' separators and, on
    case-sensitive file systems, matches each path component ignoring case
    (the game was written on Windows). Returns the input unchanged when

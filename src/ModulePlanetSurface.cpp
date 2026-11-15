@@ -918,7 +918,7 @@ bool ModulePlanetSurface::Init()
 	}
 
 	//create the label for the timer
-	TimerText = new Label("",TIMERTEXT_X, TIMERTEXT_Y, 247, 19, BLACK, g_game->font18);
+	TimerText = new Label("",TIMERTEXT_X, TIMERTEXT_Y, 247, 19, UI_TEXT, g_game->font18);
 
 	//Load Cargo Images
 	//Cargo = (BITMAP*)psdata[CARGO_BAR_BMP].dat;
@@ -971,7 +971,7 @@ bool ModulePlanetSurface::Init()
 	updateCargoFillPercent();
 
 	//Initialize label
-	label = new Label(SHIP_TEXT, CMDBUTTONS_UL_X + 10, CMDBUTTONS_UL_Y + 10, 175, 200, BLACK, g_game->font24);
+	label = new Label(SHIP_TEXT, CMDBUTTONS_UL_X + 10, CMDBUTTONS_UL_Y + 10, 175, 200, UI_TEXT, g_game->font24);
 	label->Refresh();
 
 	//Load command btn images
@@ -1005,27 +1005,27 @@ bool ModulePlanetSurface::Init()
 
 	//Create command btns
 	int cbx = CMDBUTTONS_UL_X; int cby = CMDBUTTONS_UL_Y;
-	Btns[0] = new Button(btnNormal, btnMouseOver, btnDisabled, cbx, cby, 9, 0, g_game->font18, "", BLACK);
+	Btns[0] = new Button(btnNormal, btnMouseOver, btnDisabled, cbx, cby, 9, 0, g_game->font18, "", UI_TEXT);
 	cbx += btnNormal->w;
-	Btns[1] = new Button(btnNormal, btnMouseOver, btnDisabled, cbx, cby, 10, 1, g_game->font18, "", BLACK);
+	Btns[1] = new Button(btnNormal, btnMouseOver, btnDisabled, cbx, cby, 10, 1, g_game->font18, "", UI_TEXT);
 	cbx += btnNormal->w;
-	Btns[2] = new Button(btnNormal, btnMouseOver, btnDisabled, cbx, cby, 11, 2, g_game->font18, "", BLACK);
+	Btns[2] = new Button(btnNormal, btnMouseOver, btnDisabled, cbx, cby, 11, 2, g_game->font18, "", UI_TEXT);
 
 	cby += btnNormal->h;
 	cbx = CMDBUTTONS_UL_X;
-	Btns[3] = new Button(btnNormal, btnMouseOver, btnDisabled, cbx, cby, 12, 3, g_game->font18, "", BLACK);
+	Btns[3] = new Button(btnNormal, btnMouseOver, btnDisabled, cbx, cby, 12, 3, g_game->font18, "", UI_TEXT);
 	cbx += btnNormal->w;
-	Btns[4] = new Button(btnNormal, btnMouseOver, btnDisabled, cbx, cby, 13, 4, g_game->font18, "", BLACK);
+	Btns[4] = new Button(btnNormal, btnMouseOver, btnDisabled, cbx, cby, 13, 4, g_game->font18, "", UI_TEXT);
 	cbx += btnNormal->w;
-	Btns[5] = new Button(btnNormal, btnMouseOver, btnDisabled, cbx, cby, 14, 5, g_game->font18, "", BLACK);
+	Btns[5] = new Button(btnNormal, btnMouseOver, btnDisabled, cbx, cby, 14, 5, g_game->font18, "", UI_TEXT);
 
 	cby += btnNormal->h;
 	cbx = CMDBUTTONS_UL_X;
-	Btns[6] = new Button(btnNormal, btnMouseOver, btnDisabled, cbx, cby, 15, 6, g_game->font18, "", BLACK);
+	Btns[6] = new Button(btnNormal, btnMouseOver, btnDisabled, cbx, cby, 15, 6, g_game->font18, "", UI_TEXT);
 	cbx += btnNormal->w;
-	Btns[7] = new Button(btnNormal, btnMouseOver, btnDisabled, cbx, cby, 16, 7, g_game->font18, "", BLACK);
+	Btns[7] = new Button(btnNormal, btnMouseOver, btnDisabled, cbx, cby, 16, 7, g_game->font18, "", UI_TEXT);
 	cbx += btnNormal->w;
-	Btns[8] = new Button(btnNormal, btnMouseOver, btnDisabled, cbx, cby, 17, 8, g_game->font18, "", BLACK);
+	Btns[8] = new Button(btnNormal, btnMouseOver, btnDisabled, cbx, cby, 17, 8, g_game->font18, "", UI_TEXT);
 
 	//Load big command btn images
 	//btnBigNormal = (BITMAP*)psdata[COMMAND_BIGBUTTON_BG_BMP].dat;
@@ -1056,8 +1056,8 @@ bool ModulePlanetSurface::Init()
 		return false;
 	}
 
-	BigBtns[0] = new Button(btnBigNormal, btnBigMouseOver, btnBigDisabled, OFFICERICON_UL_X, OFFICERICON_UL_Y, BIGBTN1_HOVER, BIGBTN1_CLICK, g_game->font18, "Land", BLACK);
-	BigBtns[1] = new Button(btnBigNormal, btnBigMouseOver, btnBigDisabled, OFFICERICON_UL_X + btnBigNormal->w, OFFICERICON_UL_Y, BIGBTN2_HOVER, BIGBTN2_CLICK, g_game->font18, "Launch", BLACK);
+	BigBtns[0] = new Button(btnBigNormal, btnBigMouseOver, btnBigDisabled, OFFICERICON_UL_X, OFFICERICON_UL_Y, BIGBTN1_HOVER, BIGBTN1_CLICK, g_game->font18, "Land", UI_TEXT);
+	BigBtns[1] = new Button(btnBigNormal, btnBigMouseOver, btnBigDisabled, OFFICERICON_UL_X + btnBigNormal->w, OFFICERICON_UL_Y, BIGBTN2_HOVER, BIGBTN2_CLICK, g_game->font18, "Launch", UI_TEXT);
 
 	//Load all the Lua Scripts and Register all the Lua->C++ functions
 	SetupLua();
@@ -1908,7 +1908,7 @@ void ModulePlanetSurface::Update()
 	else if (y > 0) sprintf(sLat, "%iN", y);
 
 	//print position on top gui
-	rectfill(img_gauges, 640, 10, 772, 38, makecol(50,50,50));
+	rectfill(img_gauges, 640, 10, 772, 38, makecol(14,22,36));
 	sprintf(s, "%s,%s", sLat, sLong);
 	//g_game->setFontSize(24);
 	g_game->Print24(img_gauges, 645, 12, s, LTGREEN);
