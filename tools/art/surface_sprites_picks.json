@@ -1,0 +1,13 @@
+{
+ "B_Factory": [2, false, 0], "B_ListeningPost": [1, false, 0], "B_Metropolis": [2, false, 0], "B_Mine": [2, false, 0],
+ "B_Pottery": [1, false, 0], "B_Research": [2, false, 0], "B_ShantyTown": [2, false, 0], "B_Tomb": [0, false, 0],
+ "B_WeaponsPlacement": [2, false, 0],
+ "C_2Leg_Fuzz": [1, false, 0], "C_2Leg_Large": [1, false, 0], "C_2Leg_Small": [1, false, 0], "C_2Leg_Yellow": [0, false, 0],
+ "C_4Leg_Large": [1, false, 0], "C_4Leg_Small": [1, false, 0], "C_Bat_Large": [2, false, 0], "C_Bird_Large": [0, false, 0],
+ "C_Bird_Yellow": [0, false, 0], "C_Plain_Galists": [0, false, 0], "C_Plain_Vertruk": [1, false, 0], "C_Rabid_Vertruk": [2, false, 0],
+ "C_Rodent_Huge": [0, false, 0], "C_Slug_Giant": [0, false, 0], "C_Snake_Large": [1, false, 0], "C_Spider_Giant": [2, false, 90],
+ "C_Sponge_Large": [1, false, 0], "C_Starfish_Large": [2, false, 0], "C_Swift_Galists": [2, false, 0], "Hypercube": [1, false, 0],
+ "P_Bush_Law": [2, false, 0], "P_Crystal_Small": [2, false, 0], "P_Crystal_Small2": [0, false, 0], "P_Crystal_Small3": [0, false, 0],
+ "P_Crystal_Small4": [0, false, 0], "P_Crystal_Small5": [2, false, 0], "P_Plant_Small": [0, false, 0], "P_Tree_Large": [2, false, 0],
+ "P_Tree_Small": [0, false, 0]
+}

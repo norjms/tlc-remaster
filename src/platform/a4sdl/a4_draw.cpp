@@ -438,6 +438,9 @@ void transfer(BITMAP *s, BITMAP *d, int sx, int sy, int sw_, int sh_,
 	/* drawing old art onto remaster art: its pixels are opaque */
 	const bool fix_a = d->alpha_sprite && !s->alpha_sprite;
 	const bool over = d->alpha_sprite != 0;
+	/* alpha art into a mask-cleared scratch bitmap: copy, then promote it */
+	const bool scratch = (mode == ALPHA) && !d->is_screen && !d->alpha_sprite && (long)d->w * d->h <= 512L * 512L;
+	bool promote = false;
 	const bool fast_copy = (mode == COPY && box == 1 && nx == mx && !hflip && !fix_a);
 	for (int Y = Y0; Y < Y1; Y++) {
 		int SY = ymap[Y - Y0];
@@ -474,6 +477,7 @@ void transfer(BITMAP *s, BITMAP *d, int sx, int sy, int sw_, int sh_,
 					}
 					if (al == 0) continue;
 					c = ((al / tot) << 24) | ((r / al) << 16) | ((g / al) << 8) | (bl / al);
+					if (scratch && (is_mask(dp[X]) || dp[X] == 0)) { dp[X] = c; promote = true; continue; }
 					dp[X] = over ? a4::blend_over(c, dp[X], c >> 24) : a4::blend(c, dp[X], c >> 24);
 					continue;
 				}
@@ -491,15 +495,18 @@ void transfer(BITMAP *s, BITMAP *d, int sx, int sy, int sw_, int sh_,
 				if (is_mask(c)) c ^= 0x00010000u;   /* never produce the mask colour by averaging */
 			}
 			if (mode == ALPHA) {
+				if (scratch && (is_mask(dp[X]) || dp[X] == 0)) { dp[X] = c; promote = true; continue; }
 				dp[X] = over ? a4::blend_over(c, dp[X], c >> 24) : a4::blend(c, dp[X], c >> 24);
 			} else if (mode == TRANS) {
 				unsigned a = g_alpha_blender ? (c >> 24) : (unsigned)g_trans_alpha;
+				if (!g_alpha_blender && s->alpha_sprite) a = a * (c >> 24) / 255;
 				dp[X] = over ? a4::blend_over(c, dp[X], a) : a4::blend(c, dp[X], a);
 			} else {
 				dp[X] = (fix_a && (c >> 24) == 0) ? (c | 0xFF000000u) : c;
 			}
 		}
 	}
+	if (promote) d->alpha_sprite = 1;
 	a4::touch(d);
 }
 
@@ -538,6 +545,8 @@ void masked_blit(BITMAP *s, BITMAP *d, int sx, int sy, int dx, int dy, int w, in
 
 void stretch_blit(BITMAP *s, BITMAP *d, int s_x, int s_y, int s_w, int s_h, int d_x, int d_y, int d_w, int d_h)
 {
+	if (s && d && !d->is_screen && !d->parent && d_x <= 0 && d_y <= 0 && d_x + d_w >= d->w && d_y + d_h >= d->h)
+		d->alpha_sprite = s->alpha_sprite;
 	transfer(s, d, s_x, s_y, s_w, s_h, d_x, d_y, d_w, d_h, COPY);
 }
 
@@ -588,6 +597,7 @@ void rotate_scaled_sprite(BITMAP *d, BITMAP *s, int x, int y, fixed angle, fixed
 	int x0 = MAX((int)floor(cx - rad), d->cl), x1 = MIN((int)ceil(cx + rad), d->cr);
 	int y0 = MAX((int)floor(cy - rad), d->ct), y1 = MIN((int)ceil(cy + rad), d->cb);
 	const int SW = a4::sw(s), SH = a4::sh(s);
+	bool promote = false;
 	for (int PY = y0 * ds; PY < y1 * ds; PY++) {
 		uint32_t *dp = row(d, PY);
 		double ry = (PY + 0.5) / ds - cy;
@@ -598,9 +608,16 @@ void rotate_scaled_sprite(BITMAP *d, BITMAP *s, int x, int y, fixed angle, fixed
 			int SX = (int)floor(lx * as), SY = (int)floor(ly * as);
 			if (SX < 0 || SY < 0 || SX >= SW || SY >= SH) continue;
 			uint32_t col = row(s, SY)[SX];
-			if (!is_mask(col)) dp[PX] = col;
+			if (s->alpha_sprite) {
+				/* remaster art: blend by its own alpha */
+				unsigned a = col >> 24;
+				if (!a) continue;
+				if (!d->is_screen && !d->alpha_sprite && (long)d->w * d->h <= 512L * 512L && (is_mask(dp[PX]) || dp[PX] == 0)) { dp[PX] = col; promote = true; continue; }
+				dp[PX] = d->alpha_sprite ? a4::blend_over(col, dp[PX], a) : a4::blend(col, dp[PX], a);
+			} else if (!is_mask(col)) dp[PX] = col;
 		}
 	}
+	if (promote) d->alpha_sprite = 1;
 	a4::touch(d);
 }
 
