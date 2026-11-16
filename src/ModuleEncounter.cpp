@@ -2868,6 +2868,11 @@ void ModuleEncounter::Combat_Draw()
 	if (g_game->gameState->getShieldStatus())
 	{
 		if (g_game->gameState->getShip().getShieldCapacity() > 0.0) {
+			//keep the shield centred on the ship as it is drawn (scaled from its unscaled top-left)
+			Sprite *ps = playerShip->GetSprite();
+			double sc = playerShip->GetScale();
+			shield->setPos(ps->getX() + ps->getWidth() * sc / 2 - shield->getFrameWidth() / 2,
+			               ps->getY() + ps->getHeight() * sc / 2 - shield->getFrameHeight() / 2);
 			shield->animate();
 			shield->DrawFrame(g_game->GetBackBuffer(), true);
 		}

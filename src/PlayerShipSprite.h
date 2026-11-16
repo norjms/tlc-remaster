@@ -63,6 +63,7 @@ public:
 	double GetTurnRate();
 	
 	Sprite *GetSprite() { return ship; }
+	double GetScale() { return shipScale; }
 
 };
 

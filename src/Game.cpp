@@ -16,6 +16,7 @@
 #include <alfont.h>
 #include <memory.h>
 #include <cstdio>
+#include <cstdlib>
 #include <sstream>
 #include "LogFile.h"
 
@@ -677,6 +678,25 @@ void Game::Run()
 	std::string startupmodule;
 	startupmodule = globals->getGlobalString("STARTUPMODULE");
 	if (startupmodule.length() == 0) startupmodule = MODULE_STARTUP;
+	if (startupmodule == MODULE_ENCOUNTER && gameState->player->getGalacticRegion() == ALIEN_NONE) {
+		//test hook: an encounter normally gets its race and fleet from interstellar travel
+		const char *race = getenv("TLC_TEST_ALIEN");
+		const char *fleet = getenv("TLC_TEST_FLEET");
+		int r = race ? atoi(race) : (int)ALIEN_THRYNN;
+		if (r <= ALIEN_NONE || r >= NUM_ALIEN_RACES) r = ALIEN_THRYNN;
+		gameState->player->setGalacticRegion((AlienRaces)r);
+		gameState->player->setAlienFleetSize(fleet ? atoi(fleet) : 3);
+		Ship ship = gameState->getShip();
+		if (ship.getEngineClass() == 0) {
+			ship.setEngineClass(3); ship.setShieldClass(3); ship.setArmorClass(3);
+			ship.setLaserClass(3); ship.setMissileLauncherClass(3);
+			ship.setEngineIntegrity(100); ship.setShieldIntegrity(100); ship.setLaserIntegrity(100);
+			ship.setMissileLauncherIntegrity(100); ship.setHullIntegrity(100);
+			ship.setArmorIntegrity(ship.getMaxArmorIntegrity()); ship.setShieldCapacity(ship.getMaxShieldCapacity());
+			gameState->setShip(ship);
+		}
+		debug << "Encounter test start: race " << r << endl;
+	}
 	debug << "\nLaunching Startup Module: " << startupmodule << endl;
 	modeMgr->LoadModule(startupmodule);
 

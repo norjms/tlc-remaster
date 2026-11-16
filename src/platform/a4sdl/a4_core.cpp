@@ -178,8 +178,8 @@ void pump()
 /* ---- automated testing hooks (environment variables, off by default) ----
    A4_SHOT_DIR=dir      save screen to dir/frame_NNNNN.bmp at the frames
    A4_SHOT_FRAMES=a,b,c listed here (default: every 120th frame)
-   A4_INPUT="f:cmd;..." inject input at frame f. cmds: key=N (Allegro key
-                        code, held for 3 frames), click=X,Y (left click in
+   A4_INPUT="f:cmd;..." inject input at frame f. cmds: key=N[,H] (Allegro key
+                        code, held for H frames, default 3), click=X,Y (left click in
                         game coordinates), move=X,Y, quit */
 struct ScriptedInput { long frame; std::string cmd; };
 long g_frame = 0;
@@ -218,8 +218,10 @@ void test_frame()
 		if (si.frame != g_frame) continue;
 		int a = 0, b = 0;
 		if (sscanf(si.cmd.c_str(), "key=%d", &a) == 1) {
+			b = 3;
+			sscanf(si.cmd.c_str(), "key=%d,%d", &a, &b);   /* optional hold length in frames */
 			key[a & 255] = 1;
-			g_key_release.push_back({ g_frame + 3, a & 255 });
+			g_key_release.push_back({ g_frame + (b > 0 ? b : 3), a & 255 });
 		} else if (sscanf(si.cmd.c_str(), "click=%d,%d", &a, &b) == 2) {
 			mouse_x = a; mouse_y = b; mouse_b |= 1; g_click_release = g_frame + 3;
 		} else if (sscanf(si.cmd.c_str(), "move=%d,%d", &a, &b) == 2) {
