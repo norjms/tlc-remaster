@@ -327,7 +327,17 @@ bool ModuleEncounter::Init()
 	}
 
 	//re-load images used in scroller
-	scroller->LoadTileImage("data/spacetravel/ip_tiles.tga");
+	//remaster: a 6x4-tile seamless star field laid out across the map, so it only repeats every 1536x1024
+	if (scroller->LoadTileImage("data/encounter/space_backdrop.bmp")) {
+		const int bgCols = 6, bgRows = 4;
+		scroller->SetTileImageColumns(bgCols);
+		scroller->SetTileImageRows(bgRows);
+		for (int ty = 0; ty < TILESDOWN; ty++)
+			for (int tx = 0; tx < TILESACROSS; tx++)
+				scroller->SetTile(tx, ty, (short)((tx % bgCols) + (ty % bgRows) * bgCols));
+	}
+	else
+		scroller->LoadTileImage("data/spacetravel/ip_tiles.tga");
     
     //load the message gui
 	img_messages = (BITMAP*)load_bitmap("data/messagegui/gui_messagewindow.bmp",NULL);
