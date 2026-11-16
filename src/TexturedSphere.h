@@ -25,6 +25,8 @@ private:
     int *tex_table; 
     BITMAP *source_bmp;
     bool textureWasSet; //do not destroy passed texture, only a loaded one
+    bool lightOn;       //shade the sphere (remaster); off keeps the original flat look
+    double lightX, lightY, lightZ;
 
     void InitSphereLookupTables(void);
     void Spherical2Cartesian(int alpha, int beta, double *x, double *y, double *z);
@@ -37,5 +39,7 @@ public:
     bool LoadTexture(string bmpfile);
     bool SetTexture(BITMAP *texture);
     void Draw(BITMAP *dest, int phi, int theta, int psi, int radius, int center_x, int center_y);
+    //light from screen direction (dx, dy) (y down), slightly in front of the sphere
+    void SetLight(double dx, double dy);
 
 };

@@ -991,6 +991,13 @@ bool ModuleSolarSystem::LoadStarSystem(int id)
                 //center the planet on the 256x256 image
                 int cx = 128, cy = 128;
 
+                //light the planet from the sun at the centre of the system
+                {
+                    double dx = scroller->GetTilesAcross() / 2.0 - planets[i].tilex;
+                    double dy = scroller->GetTilesDown() / 2.0 - planets[i].tiley;
+                    pb->planetRenderObj->SetLight(dx, dy);
+                }
+
                 //render the planet using TexturedSphere
                 pb->planetRenderObj->Draw( planetImage, 0, 0, rotation, pb->planetRadius, cx, cy );
 

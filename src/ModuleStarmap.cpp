@@ -195,6 +195,13 @@ bool ModuleStarmap::Init()
 	ratioY = (float)MAP_HEIGHT / 220.0f;
 
 	clear_to_color(starview,makecol(0,0,0));
+#ifdef A4SDL
+	//remaster: transparent star layer over the viewer's map window; star sprites blend into it
+	clear_to_color(starview, 0);
+	starview->alpha_sprite = 1;
+	clear_to_color(flux_view, 0);
+	flux_view->alpha_sprite = 1;
+#endif
 
 
 	//flux_sprite = new Sprite();
@@ -361,7 +368,11 @@ void ModuleStarmap::Draw()
 		int new_x_offset = 120+X_OFFSET;
 		int new_y_offset = Y_OFFSET+viewer_offset_y;
 		int text_y = 480;
+#ifdef A4SDL
+		int fontColor = makecol(200,235,255);
+#else
 		int fontColor = makecol(0,0,0);
+#endif
 		clear_to_color(text,makecol(255,0,255));
 
 		masked_blit(starview,g_game->GetBackBuffer(),0,0,new_x_offset, new_y_offset,MAP_WIDTH,MAP_HEIGHT);

@@ -13,6 +13,8 @@ TexturedSphere::TexturedSphere(int tex_size)
     tex_table = NULL; 
     source_bmp = NULL;
     textureWasSet = false;
+    lightOn = false;
+    lightX = -0.6; lightY = -0.5; lightZ = 0.62;
     InitSphereLookupTables();
 }
 
@@ -198,6 +200,14 @@ void TexturedSphere::InitSphereLookupTables()
 }
 
 
+void TexturedSphere::SetLight(double dx, double dy)
+{
+    double l = sqrt(dx * dx + dy * dy);
+    if (l < 1e-6) { dx = -0.6; dy = -0.5; l = sqrt(0.61); }
+    lightX = dx / l * 0.82; lightY = dy / l * 0.82; lightZ = 0.57;
+    lightOn = true;
+}
+
 //phi, theta, psi must be 0-255 due to lookup table
 void TexturedSphere::Draw(BITMAP *dest, int phi, int theta, int psi, int radius, int center_x, int center_y)
 {
@@ -247,7 +257,25 @@ void TexturedSphere::Draw(BITMAP *dest, int phi, int theta, int psi, int radius,
 	        alpha_beta3 = coord_transform_table[alpha_beta2] + psi;
 	     
 	        /* draw the Pixel */
-	        putpixel(dest, x+center_x, y+center_y, tex_table[alpha_beta3]); 
+	        int pix = tex_table[alpha_beta3];
+	        if (lightOn)
+	        {
+	            //sphere normal at this pixel; diffuse light, dark night side, blue rim on the lit limb
+	            double nx = (double)x / (radius * ASPECT_RATIO), ny = (double)y / radius;
+	            double nz2 = 1.0 - nx * nx - ny * ny;
+	            double nz = nz2 > 0 ? sqrt(nz2) : 0;
+	            double d = nx * lightX + ny * lightY + nz * lightZ;
+	            double lit = d > 0 ? d : 0;
+	            double shade = 0.07 + 1.05 * lit;
+	            double rim = (1.0 - nz); rim = rim * rim * rim * 0.55 * (lit > 0.05 ? 1.0 : lit * 20.0);
+	            int r = (int)(getr(pix) * shade + 95 * rim), g = (int)(getg(pix) * shade + 160 * rim), b = (int)(getb(pix) * shade + 255 * rim);
+	            //soften the outermost pixel ring against space
+	            if (nz < 0.12) { double e = 0.45 + nz * 4.5; r = (int)(r * e); g = (int)(g * e); b = (int)(b * e); }
+	            if (r > 255) r = 255; if (g > 255) g = 255; if (b > 255) b = 255;
+	            if (r == 255 && g == 0 && b == 255) g = 1;   //never the mask colour
+	            pix = makecol(r, g, b);
+	        }
+	        putpixel(dest, x+center_x, y+center_y, pix); 
 	    }
 	}
 }
